@@ -6,10 +6,11 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
+{keywords}                              {printf("Keyword: %s\n",yytext);}
 [0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
 [0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
-{keywords}                              {printf("Keyword: %s\n",yytext);}
+"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
+[a-zA-Z][a-zA-Z0-9]*                    {printf("Variable Identifier: %s\n", yytext);}
 
 %%
 
