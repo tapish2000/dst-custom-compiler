@@ -1,14 +1,15 @@
 %{
     #include <stdio.h>
-    #include "y.tab.h"
-
 %}
+
+keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|boolean|array)
 
 %%
 
 "."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
 [0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
-[0-9]+"."[0-9]+				            {printf("Float: %s\n",yytext);}
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
+{keywords}                              {printf("Keyword: %s\n",yytext);}
 
 %%
 
