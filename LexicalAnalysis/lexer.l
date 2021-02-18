@@ -1,8 +1,6 @@
 %{
     #include <stdio.h>
     #include <string.h>
-    
-    
 %}
 
 
@@ -13,6 +11,8 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 {keywords}                              {printf("Keyword: %s\n",yytext);}
 [0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
 [0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
+"true"|"false"                          {printf("Boolean: %s\n",yytext);}
+"\"".*"\""                              {printf("String: %s",yytext);}
 "."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
 
 
