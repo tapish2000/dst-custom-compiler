@@ -13,8 +13,8 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 %%
 
 {keywords}                              {printf("Keyword: %s\n",yytext);}
-[0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
-[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
+[0-9][0-9]*			         {printf("Integer: %s\n",yytext);}	
+[0-9]+"."[0-9]+			 {printf("Double: %s\n",yytext);}
 "."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
 
 
@@ -149,12 +149,28 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //strcpy(yylval.str, yytext);
 				 //return QUO;
 				 }
+				 
+{BS}"'"			{printf("%s\n",yytext);
+				 //strcpy(yylval.str, yytext);
+				 //return QUO;
+				 }
+				 
+{BS}"#"			{printf("%s\n",yytext);
+				 //strcpy(yylval.str, yytext);
+				 //return HASH;
+				 }
 
 
 "\\\\"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return BS;
+				 //return BASL;
 				 }
+				 
+{BS}"b"			{printf("%s\n",yytext);
+				 //strcpy(yylval.str, yytext);
+				 //return BASP;
+				 }	
+				 
 
 {BS}"n"			{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -165,6 +181,11 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //strcpy(yylval.str, yytext);
 				 //return TAB;
 				 }	
+				 
+{BS}"r"			{printf("%s\n",yytext);
+				 //strcpy(yylval.str, yytext);
+				 //return WS;
+				 }
 				 			
 
 {comment}                      {printf("%s\n", yytext);};
