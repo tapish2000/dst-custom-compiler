@@ -14,7 +14,7 @@ int yylex();
 }
 		  
 
-%token ADD SUB
+%token ADD SUB 
 %type <str> ADD
 %type <str> SUB
 %%
