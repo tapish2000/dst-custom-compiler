@@ -13,8 +13,11 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 %%
 
 {keywords}                              {printf("Keyword: %s\n",yytext);}
-[0-9][0-9]*			         {printf("Integer: %s\n",yytext);}	
-[0-9]+"."[0-9]+			 {printf("Double: %s\n",yytext);}
+[0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
+"true"                                  {printf("Boolean: %s\n",yytext);}
+"false"									{printf("Boolean: %s\n",yytext);}
+"\"".*"\""                              {printf("String: %s",yytext);}
 "."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
 
 
@@ -207,7 +210,7 @@ int yywrap(){}
 int main(int argc, char* argv[]) {
 	FILE* file = fopen(argv[1],"r");
 	if(file==NULL) {
-		printf("Error! File not present");
+		printf("Error! File not present\n");
 		exit(0); }
 	yyset_in(file);
     	yylex();
