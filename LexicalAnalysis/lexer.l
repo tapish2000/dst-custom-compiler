@@ -11,9 +11,18 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 %%
 
 {keywords}                              {printf("Keyword: %s\n",yytext);}
-[0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
-[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
-"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
+[0-9][0-9]*					            {printf("Integer: %s\n",yytext);
+                                        //strcpy(yylval.ystr,yytext);
+                                        //return(INT_CONST);
+                                        }	
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);
+                                        //strcpy(yylval.ystr,yytext);
+                                        //return(DOUBLE_CONST);
+                                        }
+"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);
+                                        //strcpy(yylval.ystr,yytext);
+                                        //return(FUNC_CONST);
+                                        }
 
 
 "+"				{printf("%s\n",yytext);
@@ -112,7 +121,14 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 }
 				 
 
-[a-zA-Z][a-zA-Z0-9]*                    {printf("Variable Identifier: %s\n", yytext);}
+[a-zA-Z][a-zA-Z0-9]*                    {printf("Variable Identifier: %s\n", yytext);
+                                        //strcpy(yylval.ystr,yytext);
+                                        //return(ID);
+                                        }
+
+[ \n\r\t]+                              {printf("Escaped new line or white space or tabs\n");}
+
+.                                       {printf("Unknown character: %s\n",yytext);}
 
 %%
 
