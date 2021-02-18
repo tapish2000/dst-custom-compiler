@@ -1,0 +1,13 @@
+integer .power(integer a, integer b){
+  if(a equals 0){
+    return 1;
+  }
+  return b*.power(a-1,b);
+}
+# power(a,b) means b^a #
+start{
+  integer n is take();
+  integer c is .power(5,n);
+  show(c);
+}
+
