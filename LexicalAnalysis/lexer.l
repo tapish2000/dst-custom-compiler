@@ -7,7 +7,7 @@
 %}
 
 comment  ("#")([^#]|("\\#"))*([^\\])("#")
-keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|boolean|array)
+keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|boolean|array|break|continue)
 
 %%
 
