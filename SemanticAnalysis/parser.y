@@ -17,9 +17,25 @@ int yylex();
 %token ADD SUB 
 %type <str> ADD
 %type <str> SUB
+
 %%
 
 pr: ADD			{};
+
+array_decl:                       array '<' array_type ',' data '>' ID array_assign;
+array_type:                       data_type 
+                                  | array_decl;
+func_cal:                         func_identifier '(' args_list ')' ;
+args_list:                        args 
+                                  |  ;
+args:                             args ',' expr 
+                                  | expr ;
+array_assign:                     is '[' id_list ']' 
+                                  |  ;
+id_list:                          id_list ',' constant 
+                                  | constant ;
+param:                            data_type ID ;
+assignment:                       is expr ;
 
 %%
 
