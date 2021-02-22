@@ -6,10 +6,6 @@ start {
     sum is sum + i;
     i is i + 1;
   }
-<<<<<<< HEAD
-  show(sum);
-=======
   show(sum,"\'");
->>>>>>> 5cf9f33725f5f92604deb494cedd8cce481a59d2
 }
 
