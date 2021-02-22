@@ -27,6 +27,24 @@ stmts_list:                       stmts |  ;
 stmts:                            stmt ';' stmts | stmt ;
 stmt:                             param | assign_stmt | loop | conditional |  array_decl |  return_stmt | func_call | break | continue ;
 
+
+assign_stmt:                      param assignment 
+                                  | ID assignment;
+loop:                             'loopif' '(' conditions ')' '{' stmts_list '}';
+conditonal:                       'if' '(' conditions ')' '{' stmts_list '}' remain_cond;
+remain_cond:                      elif_stmts else_stmt
+                                  | ;
+elif_stmts:                       elif_stmts 'elif' '(' conditions ')' '{' stmts_list '}'
+                                  | 'elif' '(' conditions ')' '{' stmts_list '}';
+else_stmt:                        'else' '{' stmts_list '}'
+                                  | ;
+conditions:                       conditions bi_logic_cond boolean 
+                                  | boolean
+                                  | 'not' conditions;
+boolean:                          expr rel_op expr
+                                  | expr;
+return_stmt:                      'return' expr;
+
 array_decl:                       array '<' array_type ',' data '>' ID array_assign;
 array_type:                       data_type 
                                   | array_decl;
