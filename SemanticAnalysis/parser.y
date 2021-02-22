@@ -14,9 +14,7 @@ int yylex();
 }
 		  
 
-%token ADD SUB 
-%type <str> ADD
-%type <str> SUB
+%token ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
 
 %%
 
@@ -36,6 +34,16 @@ id_list:                          id_list ',' constant
                                   | constant ;
 param:                            data_type ID ;
 assignment:                       is expr ;
+
+expr:                             expr op value | value;
+value:                            func_call | constant | arr; 
+arr:                              arr [ data ] | ID; 
+data:                             integer_number | ID; 
+data_type:                        integer | bool | string | double;
+op:                               ADD | SUB | MUL | DIV; 
+rel_op:                           LTE | GTE | LT | GT | EQ | NEQ;
+bi_logic_cond:                    AND | OR  | XOR;
+constant:                         integer_number | string_constant | bool_constant | floating_number;
 
 %%
 

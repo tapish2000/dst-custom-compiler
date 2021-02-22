@@ -7,7 +7,6 @@
 %}
 
 comment  ("#")([^#]|("\\#"))*([^\\])("#")
-BS       ("\\")
 keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|boolean|array)
 
 %%
@@ -33,77 +32,77 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 "+"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return ADD;
+				 return ADD;
 				 }  
                      
 "-"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return SUB;
+				 return SUB;
 				 }
 
 "*"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return MUL;
+				 return MUL;
 				 }
 
 "/"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return DIV;
+				 return DIV;
 				 }
 
 "is"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return ASSIGN;
+				 return ASSIGN;
 				 }
 
 "and" 				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return AND;
+				 return AND;
 				 }        
 
 "or"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return OR;
+				 return OR;
 				 }
 
 "xor"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return XOR;
+				 return XOR;
 				 }
 
 "not"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return NOT;
+				 return NOT;
 				 }
 
 "<="				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return LTE;
+				 return LTE;
 				 }
 
 ">="				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return GTE;
+				 return GTE;
 				 }
 				 
 "<"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return LT;
+				 return LT;
 				 }
 
 ">"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return GT;
+				 return GT;
 				 }
 
 "equals"			{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return EQ;
+				 return EQ;
 				 }
 
 "!="				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return NEQ;
+				 return NEQ;
 				 }
 
 ";"				{printf("%s\n",yytext);
@@ -148,17 +147,17 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 [a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext);}
 
-{BS}"\""			{printf("%s\n",yytext);
+"\\\""				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return QUO;
 				 }
 				 
-{BS}"'"			{printf("%s\n",yytext);
+"\\'"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return QUO;
 				 }
 				 
-{BS}"#"			{printf("%s\n",yytext);
+"\\#"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return HASH;
 				 }
@@ -169,27 +168,26 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //return BASL;
 				 }
 				 
-{BS}"b"			{printf("%s\n",yytext);
+"\\b"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return BASP;
 				 }	
 				 
 
-{BS}"n"			{printf("%s\n",yytext);
+"\\n"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return NEWL;
 				 }
 				 
-{BS}"t"			{printf("%s\n",yytext);
+"\\t"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return TAB;
 				 }	
 				 
-{BS}"r"			{printf("%s\n",yytext);
+"\\r"   			{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return WS;
-				 }
-				 			
+				 }	
 
 {comment}                      {printf("%s\n", yytext);};
 
