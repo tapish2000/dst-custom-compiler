@@ -17,8 +17,15 @@ int yylex();
 %token ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
 
 %%
-
-pr: ADD			{};
+program:                          functions start '{' stmts_list '}';
+functions:                        functions function |  ;
+function:                         function_name '{' stmts_list '}';
+function_name:                    data_type func_identifier '(' params ')';
+params:                           param_list |  ;
+param_list:                       param_list ',' param | param;
+stmts_list:                       stmts |  ;
+stmts:                            stmt ';' stmts | stmt ;
+stmt:                             param | assign_stmt | loop | conditional |  array_decl |  return_stmt | func_call | break | continue ;
 
 array_decl:                       array '<' array_type ',' data '>' ID array_assign;
 array_type:                       data_type 
@@ -49,7 +56,6 @@ constant:                         integer_number | string_constant | bool_consta
 
 int main(int argc, char *argv[])
 {
-  
   return 0;
 }
 
@@ -57,5 +63,3 @@ int yyerror() {
   printf("\n\nError\n");
   return 0;
 }
-
-
