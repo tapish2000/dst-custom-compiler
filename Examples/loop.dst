@@ -6,6 +6,6 @@ start {
     sum is sum + i;
     i is i + 1;
   }
-  show(sum,"\'");
+  show(sum);
 }
 
