@@ -14,12 +14,36 @@ int yylex();
 }
 		  
 
-%token ADD SUB 
-%type <str> ADD
-%type <str> SUB
+%token ADD SUB MUL DIV ASSIGN
+
 %%
 
 pr: ADD			{};
+
+array_decl:                       array '<' array_type ',' data '>' ID array_assign;
+array_type:                       data_type 
+                                  | array_decl;
+func_cal:                         func_identifier '(' args_list ')' ;
+args_list:                        args 
+                                  |  ;
+args:                             args ',' expr 
+                                  | expr ;
+array_assign:                     is '[' id_list ']' 
+                                  |  ;
+id_list:                          id_list ',' constant 
+                                  | constant ;
+param:                            data_type ID ;
+assignment:                       is expr ;
+
+expr:                             expr op value | value;
+value:                            func_call | constant | arr; 
+arr:                              arr [ data ] | ID 
+data:                             integer_number | ID; 
+data_type:                        integer | bool | string | double
+op:                               ADD | SUB | MUL | DIV 
+rel_op:                           >= | <= | equals | < | > | !=
+bi_logic_cond:                    and | or  | xor
+constant:                         integer_number | string_constant | bool_constant | floating_number
 
 %%
 
