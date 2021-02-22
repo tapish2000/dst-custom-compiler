@@ -37,7 +37,7 @@ assignment:                       is expr ;
 
 expr:                             expr op value | value;
 value:                            func_call | constant | arr; 
-arr:                              arr [ data ] | ID; 
+arr:                              arr '[' data ']' | ID; 
 data:                             integer_number | ID; 
 data_type:                        integer | bool | string | double;
 op:                               ADD | SUB | MUL | DIV; 
