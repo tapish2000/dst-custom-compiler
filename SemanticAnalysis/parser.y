@@ -10,11 +10,13 @@ int yylex();
 %}
 
 %union {
-	 char str[10];
+	char str[10];
+  int yint;
 }
 		  
 
 %token ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
+%token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
 %%
 program:                          functions start '{' stmts_list '}';
@@ -30,20 +32,20 @@ stmt:                             param | assign_stmt | loop | conditional |  ar
 
 assign_stmt:                      param assignment 
                                   | ID assignment;
-loop:                             'loopif' '(' conditions ')' '{' stmts_list '}';
-conditonal:                       'if' '(' conditions ')' '{' stmts_list '}' remain_cond;
+loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
+conditonal:                       IF '(' conditions ')' '{' stmts_list '}' remain_cond;
 remain_cond:                      elif_stmts else_stmt
                                   | ;
-elif_stmts:                       elif_stmts 'elif' '(' conditions ')' '{' stmts_list '}'
-                                  | 'elif' '(' conditions ')' '{' stmts_list '}';
-else_stmt:                        'else' '{' stmts_list '}'
+elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_list '}'
+                                  | ELIF '(' conditions ')' '{' stmts_list '}';
+else_stmt:                        ELSE '{' stmts_list '}'
                                   | ;
 conditions:                       conditions bi_logic_cond boolean 
                                   | boolean
-                                  | 'not' conditions;
+                                  | NOT conditions;
 boolean:                          expr rel_op expr
                                   | expr;
-return_stmt:                      'return' expr;
+return_stmt:                      RET expr;
 
 array_decl:                       array '<' array_type ',' data '>' ID array_assign;
 array_type:                       data_type 
