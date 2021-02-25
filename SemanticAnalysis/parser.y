@@ -74,6 +74,12 @@ constant:                         integer_number | string_constant | bool_consta
 
 int main(int argc, char *argv[])
 {
+  if (argc != 2) {
+      printf("\nUsage: <exefile> <inputfile>\n\n");
+      exit(0);
+  }
+  yyin = fopen(argv[1], "r");
+  yyparse();
   return 0;
 }
 
