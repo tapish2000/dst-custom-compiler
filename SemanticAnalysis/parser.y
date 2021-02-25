@@ -43,7 +43,7 @@ elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_l
                                   | ELIF '(' conditions ')' '{' stmts_list '}';
 else_stmt:                        ELSE '{' stmts_list '}'
                                   | ;
-conditions:                       conditions bi_logic_cond boolean 
+conditions:                       boolean bi_logic_cond conditions
                                   | boolean
                                   | NOT conditions;
 boolean:                          expr rel_op expr
@@ -66,7 +66,7 @@ param:                            data_type ID ;
 assignment:                       ASSIGN expr ;
 
 expr:                             expr op value | value;
-value:                            func_call | constant | ARR; 
+value:                            func_call | constant | arr; 
 arr:                              ARR '[' data ']' | ID; 
 data:                             INT_CONST | ID; 
 data_type:                        INT | BOOL | STR | DOUBLE;
