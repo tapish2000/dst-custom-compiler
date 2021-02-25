@@ -1,7 +1,7 @@
 %{
     #include <stdio.h>
     #include <string.h>
-    #include <y.tab.h>
+    #include "y.tab.h"
     
 %}
 
@@ -10,13 +10,13 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-{keywords}                              {printf("Keyword: %s\n",yytext); return keyword(yytext);}
-[0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
-[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
-"true"                                  {printf("Boolean: %s\n",yytext);}
-"false"									{printf("Boolean: %s\n",yytext);}
-"\"".*"\""                              {printf("String: %s",yytext);}
-"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
+{keywords}                              {printf("Reserved_Keywords: %s\n",yytext); return keyword(yytext);}
+[0-9][0-9]*					            {printf("Integer: %s\n",yytext); return INT_CONST;}	
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext); return FLOAT_CONST;}
+"true"                                  {printf("Boolean: %s\n",yytext); return BOOL_CONST;}
+"false"									{printf("Boolean: %s\n",yytext); return BOOL_CONST;}
+"\"".*"\""                              {printf("String: %s",yytext); return STR_CONST;}
+"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext); return FUNC_ID;}
 
 
 "++"				{printf("%s\n",yytext);
@@ -144,7 +144,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //return SEP;
 				 }
 
-[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext);}
+[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); return ID;}
 
 "\\\""				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
