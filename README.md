@@ -1,4 +1,4 @@
 # dst Custom Compiler
 
 - [x] Lexer written
-- [] Parser Phase being written
+- [ ] Parser Phase being written

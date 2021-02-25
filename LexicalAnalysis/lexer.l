@@ -1,9 +1,9 @@
 %{
     #include <stdio.h>
     #include <string.h>
-    //#include <y.tab.h>
+    #include "y.tab.h"
     
-    
+	int is_keyword(char* s);
 %}
 
 comment  ("#")([^#]|("\\#"))*([^\\])("#")
@@ -11,13 +11,13 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-{keywords}                              {printf("Keyword: %s\n",yytext);}
-[0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
-[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
-"true"                                  {printf("Boolean: %s\n",yytext);}
-"false"									{printf("Boolean: %s\n",yytext);}
-"\"".*"\""                              {printf("String: %s",yytext);}
-"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
+{keywords}                              {printf("Reserved_words: %s\n",yytext); return is_keyword(yytext);}
+[0-9][0-9]*					            {printf("Integer: %s\n",yytext); return INT_CONST;}	
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext); return FLOAT_CONST;}
+"true"                                  {printf("Boolean: %s\n",yytext); return BOOL_CONST;}
+"false"									{printf("Boolean: %s\n",yytext); return BOOL_CONST;}
+"\"".*"\""                              {printf("String: %s",yytext); return STR_CONST;}
+"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext); return FUNC_ID;}
 
 
 "++"				{printf("%s\n",yytext);
@@ -145,7 +145,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //return SEP;
 				 }
 
-[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext);}
+[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); return ID;}
 
 "\\\""				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -196,14 +196,13 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-/*
-Reserved keywords list
-char* reserved[] = {}
+// Reserved keywords list
+char* reserved[16] = {"if","else","elif","loopif","show","take","return","void","start","integer","double","string","boolean","array","break","continue"};
+int res_id[16] = {IF, ELSE, ELIF, LOOP, SHOW, TAKE, RET, VOID, START, INT, DOUBLE, STR, BOOL, ARR, BREAK, CONT};
 
-*/
 
 // These will later be commented out
-int yywrap(){}
+/*
 
 int main(int argc, char* argv[]) {
 	FILE* file = fopen(argv[1],"r");
@@ -213,4 +212,15 @@ int main(int argc, char* argv[]) {
 	yyset_in(file);
     	yylex();
     	return 0;
+}
+*/
+int yywrap(){}
+
+int is_keyword(char* s){
+	int i;
+	for(i=0;i<16 && strcmp(s,reserved[i])!=0;i++);
+	if(i<16){
+		return res_id[i];
+	}
+	return -1;
 }
