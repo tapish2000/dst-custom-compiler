@@ -10,30 +10,33 @@ int yylex();
 %}
 
 %union {
-	char str[10];
+	char str[50];
   int yint;
 }
 		  
 
-%token ADD SUB MUL DIV IS AND OR XOR LTE GTE LT GT EQ NEQ NOT
-%token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
+%token ADD SUB MUL DIV IS AND OR XOR LTE GTE LT GT EQ NEQ NOT ID FUNC_ID
+%token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
+
+%type <str> ID
+%type <str> FUNC_ID
 
 %%
-program:                          functions start '{' stmts_list '}';
+program:                          functions START '{' stmts_list '}';
 functions:                        functions function |  ;
 function:                         function_name '{' stmts_list '}';
-function_name:                    data_type func_identifier '(' params ')';
+function_name:                    data_type FUNC_ID '(' params ')';
 params:                           param_list |  ;
 param_list:                       param_list ',' param | param;
 stmts_list:                       stmts |  ;
 stmts:                            stmt ';' stmts | stmt ;
-stmt:                             param | assign_stmt | loop | conditional |  array_decl |  return_stmt | func_call | break | continue ;
+stmt:                             param | assign_stmt | loop | conditional |  array_decl |  return_stmt | func_call | BREAK | CONT ;
 
 
 assign_stmt:                      param assignment 
                                   | ID assignment;
 loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
-conditonal:                       IF '(' conditions ')' '{' stmts_list '}' remain_cond;
+conditional:                       IF '(' conditions ')' '{' stmts_list '}' remain_cond;
 remain_cond:                      elif_stmts else_stmt
                                   | ;
 elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_list '}'
@@ -47,26 +50,26 @@ boolean:                          expr rel_op expr
                                   | expr;
 return_stmt:                      RET expr;
 
-array_decl:                       array '<' array_type ',' data '>' ID array_assign;
+array_decl:                       ARR LT array_type ',' data GT ID array_assign;
 array_type:                       data_type 
                                   | array_decl;
-func_cal:                         func_identifier '(' args_list ')' ;
+func_call:                         FUNC_ID '(' args_list ')' ;
 args_list:                        args 
                                   |  ;
 args:                             args ',' expr 
                                   | expr ;
-array_assign:                     is '[' id_list ']' 
+array_assign:                     IS '[' id_list ']' 
                                   |  ;
 id_list:                          id_list ',' constant 
                                   | constant ;
 param:                            data_type ID ;
-assignment:                       is expr ;
+assignment:                       IS expr ;
 
 expr:                             expr op value | value;
 value:                            func_call | constant | arr; 
 arr:                              arr '[' data ']' | ID; 
 data:                             integer_number | ID; 
-data_type:                        integer | bool | string | double;
+data_type:                        INT | BOOL | STR | DOUBLE;
 op:                               ADD | SUB | MUL | DIV; 
 rel_op:                           LTE | GTE | LT | GT | EQ | NEQ;
 bi_logic_cond:                    AND | OR  | XOR;

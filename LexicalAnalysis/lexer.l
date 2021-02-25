@@ -10,13 +10,33 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-{keywords}                              {printf("Keyword: %s\n",yytext); return keyword(yytext);}
+
+"if"			{return IF;}
+"else"			{return ELSE;}  
+"elif"			{return ELIF;}  
+"loopif"		{return LOOP;}  
+"show"			{return SHOW;}  
+"take"			{return TAKE;}  
+"return"		{return RET;} 
+"void"			{return VOID;}  
+"start"			{return START;}   
+"integer"		{return INT;}  
+"double"		{return DOUBLE;}   
+"string"		{return STR;}
+"boolean"		{return BOOL;}     
+"array"			{return ARR;}  
+"break"			{return BREAK;}  
+"continue"		{return CONT;}  
+
 [0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
 [0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
 "true"                                  {printf("Boolean: %s\n",yytext);}
 "false"									{printf("Boolean: %s\n",yytext);}
 "\"".*"\""                              {printf("String: %s",yytext);}
-"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext);}
+
+"."[a-zA-Z][a-zA-Z0-9]*                 {//printf("Function Identifier: %s\n",yytext);
+										strcpy(yylval.str, yytext);
+										return FUNC_ID;}
 
 
 "++"			{//printf("%s\n",yytext);
@@ -144,46 +164,48 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 return ',';
 				 }
 
-[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext);}
+[a-zA-Z][a-zA-Z0-9]*           {//printf("Variable Identifier: %s\n", yytext);
+								strcpy(yylval.str, yytext);
+								return ID;}
 
-"\\\""				{printf("%s\n",yytext);
+"\\\""			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return DQUO;
 				 }
 				 
-"\\'"				{printf("%s\n",yytext);
+"\\'"			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return QUO;
 				 }
 				 
-"\\#"				{printf("%s\n",yytext);
+"\\#"			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return HASH;
 				 }
 
 
-"\\\\"				{printf("%s\n",yytext);
+"\\\\"			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return BASL;
 				 }
 				 
-"\\b"				{printf("%s\n",yytext);
+"\\b"			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return BASP;
 				 }	
 				 
 
-"\\n"				{printf("%s\n",yytext);
+"\\n"			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return NEWL;
 				 }
 				 
-"\\t"				{printf("%s\n",yytext);
+"\\t"			{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return TAB;
 				 }	
 				 
-"\\r"   			{printf("%s\n",yytext);
+"\\r"   		{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return WS;
 				 }	
@@ -213,7 +235,7 @@ int main(int argc, char* argv[]) {
     	yylex();
     	return 0;
 }
-*/
+
 int keyword(char* s){
 	int i;
 	for(i=0;i<16 && strcmp(s,reserved[i])!=0;i++);
@@ -222,3 +244,4 @@ int keyword(char* s){
 	}
 	return -1;
 }
+*/
