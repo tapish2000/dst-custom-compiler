@@ -1,8 +1,7 @@
 %{
     #include <stdio.h>
     #include <string.h>
-    //#include <y.tab.h>
-    
+    #include <y.tab.h>
     
 %}
 
@@ -11,7 +10,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-{keywords}                              {printf("Keyword: %s\n",yytext);}
+{keywords}                              {printf("Keyword: %s\n",yytext); return keyword(yytext);}
 [0-9][0-9]*					            {printf("Integer: %s\n",yytext);}	
 [0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext);}
 "true"                                  {printf("Boolean: %s\n",yytext);}
@@ -196,13 +195,13 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-/*
-Reserved keywords list
-char* reserved[] = {}
+// Reserved keywords list
+char* reserved[16] = {"if","else","elif","loopif","show","take","return","void","start","integer","double","string","boolean","array","break","continue"};
+int res_id[16] = {IF, ELSE, ELIF, LOOP, SHOW, TAKE, RET, VOID, START, INT, DOUBLE, STR, BOOL, ARR, BREAK, CONT};
 
-*/
 
 // These will later be commented out
+/*
 int yywrap(){}
 
 int main(int argc, char* argv[]) {
@@ -213,4 +212,13 @@ int main(int argc, char* argv[]) {
 	yyset_in(file);
     	yylex();
     	return 0;
+}
+*/
+int keyword(char* s){
+	int i;
+	for(i=0;i<16 && strcmp(s,reserved[i])!=0;i++);
+	if(i<16){
+		return res_id[i];
+	}
+	return -1;
 }
