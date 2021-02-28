@@ -220,7 +220,9 @@ int is_keyword(char* s){
 	int i;
 	for(i=0;i<16 && strcmp(s,reserved[i])!=0;i++);
 	if(i<16){
+		printf("%s\n",reserved[i]);
 		return res_id[i];
 	}
+	printf("None of these\n");
 	return -1;
 }

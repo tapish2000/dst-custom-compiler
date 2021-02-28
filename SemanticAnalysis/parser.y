@@ -23,15 +23,29 @@ int yylex();
 
 %%
 program:                          functions START '{' stmts_list '}';
-functions:                        functions function |  ;
+functions:                        functions function 
+                                  |  ;
 function:                         function_name '{' stmts_list '}';
 function_name:                    data_type FUNC_ID '(' params ')';
-params:                           param_list |  ;
-param_list:                       param_list ',' param | param;
-stmts_list:                       stmts |  ;
-stmts:                            stmt ';' stmts | stmt ;
-stmt:                             param | assign_stmt | loop | conditional |  array_decl |  return_stmt | func_call | BREAK | CONT ;
-
+params:                           param_list 
+                                  |  ;
+param_list:                       param_list ',' param 
+                                  | param;
+stmts_list:                       stmts 
+                                  |  ;
+stmts:                            stmt stmts 
+                                  | stmt ;
+stmt:                             withSemcol ';'
+                                  | withoutSemcol ;
+withSemcol:                       param 
+                                  | assign_stmt  
+                                  | array_decl 
+                                  | return_stmt 
+                                  | func_call 
+                                  | BREAK 
+                                  | CONT ;
+withoutSemcol:                    loop 
+                                  | conditional;
 
 assign_stmt:                      param assignment 
                                   | ID assignment;
@@ -43,7 +57,7 @@ elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_l
                                   | ELIF '(' conditions ')' '{' stmts_list '}';
 else_stmt:                        ELSE '{' stmts_list '}'
                                   | ;
-conditions:                       conditions bi_logic_cond boolean 
+conditions:                       boolean bi_logic_cond conditions
                                   | boolean
                                   | NOT conditions;
 boolean:                          expr rel_op expr
