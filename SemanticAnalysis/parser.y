@@ -16,7 +16,7 @@ int yylex();
 }
 		  
 
-%token <yint> ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE EQ NEQ NOT
+%token <yint> ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
 %token <yint> FUNC_ID ID
 %token <yint> INT_CONST STR_CONST BOOL_CONST FLOAT_CONST
 %token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
@@ -44,7 +44,7 @@ stmt:                             withSemcol { printf("WITHSEM\n");}';'
                                   | withoutSemcol ;
 
 withSemcol:                       param 
-                                  | assign_stmt{ printf("ASSING\n");}  
+                                  | assign_stmt{ printf("ASSING\n");} 
                                   | array_decl 
                                   | return_stmt 
                                   | func_call 
@@ -55,7 +55,7 @@ withoutSemcol:                    loop
                                   | conditional;
 
 assign_stmt:                      param assignment { printf("PARAM + ASSIGMENT\n");}
-                                  | ID assignment;
+                                  | ID assignment | arr assignment;
 
 loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
 
@@ -70,11 +70,11 @@ elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_l
 else_stmt:                        ELSE '{' stmts_list '}'
                                   | ;
 
-conditions:                       boolean bi_logic_cond conditions
-                                  | boolean
+conditions:                       boolean {printf("This is a single condition\n");}
+                                  | boolean bi_logic_cond conditions
                                   | NOT conditions;
 
-boolean:                          expr rel_op expr
+boolean:                          boolean {printf("Boolean\n");} rel_op {printf("Operator\n");} expr {printf("Expression\n");}
                                   | expr;
 
 return_stmt:                      RET expr;
@@ -84,7 +84,7 @@ array_decl:                       ARR '<' array_type ',' data '>' ID array_assig
 array_type:                       data_type 
                                   | array_decl;
 
-func_call:                         func_type '(' args_list ')' ;
+func_call:                        func_type '(' args_list ')' ;
 
 func_type:                        FUNC_ID | SHOW |TAKE;
 
@@ -108,7 +108,7 @@ expr:                             expr op value | value;
 
 value:                            func_call | constant | arr; 
 
-arr:                              {printf("arr[i]\n");} arr '[' data ']' | ID; 
+arr:                              arr '[' data ']' | ID; 
 
 data:                             INT_CONST | ID; 
 

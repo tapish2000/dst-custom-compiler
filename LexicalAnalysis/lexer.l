@@ -77,6 +77,11 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 return NOT;
 				 }
 
+"<"				return '<';
+
+">"				return '>';
+
+
 "<="				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 return LTE;
@@ -86,10 +91,6 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //strcpy(yylval.str, yytext);
 				 return GTE;
 				 }
-				 
-"<"				return '<';
-
-">"				return '>';
 
 "equals"			{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -102,6 +103,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 }
 
 "{"				return '{';
+
 "}"				return '}';
 
 "("				return '(';
@@ -172,6 +174,7 @@ int res_id[16] = {IF, ELSE, ELIF, LOOP, SHOW, TAKE, RET, VOID, START, INT, DOUBL
 
 // These will later be commented out
 /*
+
 int main(int argc, char* argv[]) {
 	FILE* file = fopen(argv[1],"r");
 	if(file==NULL) {
