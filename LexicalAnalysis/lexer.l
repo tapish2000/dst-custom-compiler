@@ -81,7 +81,6 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 ">"				return '>';
 
-
 "<="				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 return LTE;
