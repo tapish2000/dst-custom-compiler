@@ -1,7 +1,6 @@
 %{
     #include <stdio.h>
     #include "y.tab.h"
-    
 	int is_keyword(char* s);
 %}
 
@@ -12,7 +11,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 {keywords}                              {printf("Reserved_words: %s\n",yytext);      return is_keyword(yytext);}
 [0-9][0-9]*					            {printf("Integer: %s\n",yytext); 		 	 yylval.yint = atoi(yytext); return INT_CONST;}	
-[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext); 			 yylval.yf = atoi(yytext); return FLOAT_CONST;}
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext); 			 yylval.ydou = atoi(yytext); return FLOAT_CONST;}
 "true"                      			{printf("Boolean: %s\n",yytext); 			 yylval.yint = 0; return BOOL_CONST;}
 "false"                   				{printf("Boolean: %s\n",yytext); 			 yylval.yint = 1; return BOOL_CONST;}
 "\"".*"\""                              {printf("String: %s\n",yytext); 			 strcpy(yylval.ystr, yytext); return STR_CONST;}

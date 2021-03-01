@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <symbol_table.h>
 extern FILE * yyin;
 
 int yyerror(char*);
@@ -12,19 +11,18 @@ int yylex();
 
 %union {
   int yint;
-  float yf;
+  double ydou;
   //boolean ybool;
   char yid[100];
-  char ystr[150];
+  char ystr[300];
 }
 		  
 
 %token ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE EQ NEQ NOT
 %token <yid> FUNC_ID ID
-%token <yint> INT_CONST 
+%token <yint> INT_CONST BOOL_CONST
 %token <yf> FLOAT_CONST
 %token <ystr> STR_CONST 
-%token <yint> BOOL_CONST 
 %token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
 %%

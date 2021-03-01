@@ -1,18 +1,22 @@
 
-#define NAME_LEN 300
+#define NAME_LEN 100
 #define SYM_TABLE_SIZE 40
 
+union Value{
+  int ivalue;
+  double dvalue;
+  char* yvalue;
+};
 
 struct Symbol {
   char name[NAME_LEN];                /* Variable Name */
   char func_name[NAME_LEN];           /* Function Name */
   int type;                           /* Datatype */
   int scope;                          /* Scope */
-  int int_val;                        /* Integer Value */
-  double double_val;                  /* Double Value */
-  char *string_val;                   /* String Value */
-  int bool_val;                       /* Boolean Value */
-  int arr_size;                       /* Size of an array */
+  union Value value;                  //Value of the variable
+  int size;                           //size of the variable
+  char tag;                           //a-Array, v-Variable, f-function
+  int no_elements;                    // number of elements for an array, in case of a variable - 1
   int no_of_params;                   /* Number of parameters in a function */
   int *param_list;                    /* List of parameters of a function */ 
   int *arr_elements;                  /* Elements in an array */
