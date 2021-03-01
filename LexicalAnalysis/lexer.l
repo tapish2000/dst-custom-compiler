@@ -20,6 +20,8 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 "."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext); return FUNC_ID;}
 
 
+";"				return ';';
+
 "++"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return INC;
@@ -85,15 +87,9 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 return GTE;
 				 }
 				 
-"<"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 return LT;
-				 }
+"<"				return '<';
 
-">"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 return GT;
-				 }
+">"				return '>';
 
 "equals"			{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -105,45 +101,19 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 return NEQ;
 				 }
 
-";"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return TER;
-				 }
+"{"				return '{';
 
-"{"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return BEGIN;
-				 }
+"}"				return '}';
 
-"}"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return END;
-				 }
+"("				return '(';
 
-"("				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return FUNBEG;
-				 }
+")"				return ')';
 
-")"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return FUNEND;
-				 }
+"["				return '[';
 
-"["				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return ARRBEG;
-				 }
+"]"				return ']';
 
-"]"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return ARREND;
-				 }
-
-","				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return SEP;
-				 }
+","				return ',';
 
 [a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); return ID;}
 
@@ -189,9 +159,9 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //return WS;
 				 }	
 
-{comment}                      {printf("%s\n", yytext);};
+{comment}        {printf("%s\n", yytext);};
 
-(.|[\n])			;
+[ \t\n]			;
 
 
 %%
