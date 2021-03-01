@@ -145,7 +145,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //return SEP;
 				 }
 
-[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); return ID;}
+[a-zA-Z][a-zA-Z0-9]*           {printf("Hey\n"); printf("Variable Identifier: %s\n", yytext); strcpy(yylval.ystr, yytext); return ID;}
 
 "\\\""				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -203,6 +203,7 @@ int res_id[16] = {IF, ELSE, ELIF, LOOP, SHOW, TAKE, RET, VOID, START, INT, DOUBL
 
 // These will later be commented out
 /*
+
 int main(int argc, char* argv[]) {
 	FILE* file = fopen(argv[1],"r");
 	if(file==NULL) {
@@ -219,7 +220,9 @@ int is_keyword(char* s){
 	int i;
 	for(i=0;i<16 && strcmp(s,reserved[i])!=0;i++);
 	if(i<16){
+		printf("%s\n",reserved[i]);
 		return res_id[i];
 	}
+	printf("None of these\n");
 	return -1;
 }

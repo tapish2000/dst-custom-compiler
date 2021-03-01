@@ -6,4 +6,4 @@ y.tab.c: SemanticAnalysis/parser.y
 	yacc -dv ./SemanticAnalysis/parser.y
 	
 clean:
-	rm -f lex.yy.c y.tab.c y.tab.h myparser
+	rm -f lex.yy.c y.tab.c y.tab.h myparser y.output
