@@ -1,6 +1,6 @@
 start {
   integer n is take();
-  integer i is 1;   
+  integer i is 1.00;   
   integer sum is 0;
   loopif (i <= n) {
     sum is sum + i;

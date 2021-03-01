@@ -1,7 +1,8 @@
 %{
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 extern FILE * yyin;
 
 int yyerror(char*);
@@ -10,16 +11,21 @@ int yylex();
 %}
 
 %union {
-	char str[10];
   int yint;
-  char ystr[100];
+  float yf;
+  //boolean ybool;
+  char yid[100];
+  char ystr[150];
 }
 		  
 
-%token <yint> ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
-%token <yint> FUNC_ID ID
-%token <yint> INT_CONST STR_CONST BOOL_CONST FLOAT_CONST
-%token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
+%token ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE EQ NEQ NOT
+%token <yid> FUNC_ID ID
+%token <yint> INT_CONST 
+%token <yf> FLOAT_CONST
+%token <ystr> STR_CONST 
+%token <yint> BOOL_CONST 
+%token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
 %%
 program:                          functions START{ printf("START\n");} '{' stmts_list '}';
@@ -54,8 +60,7 @@ withSemcol:                       param
 withoutSemcol:                    loop 
                                   | conditional;
 
-assign_stmt:                      param assignment { printf("PARAM + ASSIGMENT\n");}
-                                  | ID assignment | arr assignment;
+assign_stmt:                      param assignment { printf("PARAM + ASSIGMENT\n");} | arr assignment;
 
 loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
 
@@ -108,7 +113,7 @@ expr:                             expr op value | value;
 
 value:                            func_call | constant | arr; 
 
-arr:                              arr '[' data ']' | ID; 
+arr:                              arr '[' data ']' | ID;
 
 data:                             INT_CONST | ID; 
 
