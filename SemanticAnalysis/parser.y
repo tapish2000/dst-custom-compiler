@@ -22,7 +22,7 @@ int yylex();
 %token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
 %%
-program:                          functions START{ printf("START\n");} '{' stmts_list '}';
+program:                          functions START '{' stmts_list '}';
 
 functions:                        functions function 
                                   |  ;
@@ -37,14 +37,14 @@ params:                           param_list
 param_list:                       param_list ',' param 
                                   | param;
 
-stmts_list:                       stmt{ printf("STMT\n");} stmts_list{ printf("STMT_LIST\n");} 
+stmts_list:                       stmt stmts_list 
                                   |  ;
 
-stmt:                             withSemcol { printf("WITHSEM\n");}';'
+stmt:                             withSemcol ';'
                                   | withoutSemcol ;
 
 withSemcol:                       param 
-                                  | assign_stmt{ printf("ASSING\n");}  
+                                  | assign_stmt
                                   | array_decl 
                                   | return_stmt 
                                   | func_call 
@@ -54,8 +54,8 @@ withSemcol:                       param
 withoutSemcol:                    loop 
                                   | conditional;
 
-assign_stmt:                      param assignment { printf("PARAM + ASSIGMENT\n");}
-                                  | ID assignment;
+assign_stmt:                      param assignment 
+                                  | arr assignment;
 
 loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
 
@@ -70,11 +70,11 @@ elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_l
 else_stmt:                        ELSE '{' stmts_list '}'
                                   | ;
 
-conditions:                       boolean bi_logic_cond conditions
-                                  | boolean
+conditions:                       boolean 
+                                  | boolean bi_logic_cond conditions
                                   | NOT conditions;
 
-boolean:                          expr rel_op expr
+boolean:                          boolean  rel_op  expr 
                                   | expr;
 
 return_stmt:                      RET expr;
@@ -84,7 +84,7 @@ array_decl:                       ARR '<' array_type ',' data '>' ID array_assig
 array_type:                       data_type 
                                   | array_decl;
 
-func_call:                         func_type '(' args_list ')' ;
+func_call:                        func_type '(' args_list ')' ;
 
 func_type:                        FUNC_ID | SHOW |TAKE;
 
@@ -102,13 +102,13 @@ id_list:                          id_list ',' constant
 
 param:                            data_type ID ;
 
-assignment:                       ASSIGN expr { printf("START\n");};
+assignment:                       ASSIGN expr ;
 
 expr:                             expr op value | value;
 
 value:                            func_call | constant | arr; 
 
-arr:                              ARR '[' data ']' | ID; 
+arr:                              arr '[' data ']' | ID; 
 
 data:                             INT_CONST | ID; 
 
@@ -116,7 +116,7 @@ data_type:                        INT | BOOL | STR | DOUBLE | VOID;
 
 op:                               ADD | SUB | MUL | DIV; 
 
-rel_op:                           LTE | GTE | LT | GT | EQ | NEQ;
+rel_op:                           LTE | GTE | '<' | '>' | EQ | NEQ;
 
 bi_logic_cond:                    AND | OR  | XOR;
 
