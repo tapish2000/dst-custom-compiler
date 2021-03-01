@@ -43,14 +43,14 @@ params:                           param_list
 param_list:                       param_list ',' param 
                                   | param;
 
-stmts_list:                       stmt{ printf("STMT\n");} stmts_list{ printf("STMT_LIST\n");} 
+stmts_list:                       stmt stmts_list 
                                   |  ;
 
-stmt:                             withSemcol { printf("WITHSEM\n");}';'
+stmt:                             withSemcol ';'
                                   | withoutSemcol ;
 
 withSemcol:                       param 
-                                  | assign_stmt{ printf("ASSING\n");} 
+                                  | assign_stmt
                                   | array_decl 
                                   | return_stmt 
                                   | func_call 
@@ -60,7 +60,8 @@ withSemcol:                       param
 withoutSemcol:                    loop 
                                   | conditional;
 
-assign_stmt:                      param assignment { printf("PARAM + ASSIGMENT\n");} | arr assignment;
+assign_stmt:                      param assignment 
+                                  | arr assignment;
 
 loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
 
@@ -75,11 +76,11 @@ elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_l
 else_stmt:                        ELSE '{' stmts_list '}'
                                   | ;
 
-conditions:                       boolean {printf("This is a single condition\n");}
+conditions:                       boolean 
                                   | boolean bi_logic_cond conditions
                                   | NOT conditions;
 
-boolean:                          boolean {printf("Boolean\n");} rel_op {printf("Operator\n");} expr {printf("Expression\n");}
+boolean:                          boolean  rel_op  expr 
                                   | expr;
 
 return_stmt:                      RET expr;
@@ -107,13 +108,13 @@ id_list:                          id_list ',' constant
 
 param:                            data_type ID ;
 
-assignment:                       ASSIGN expr { printf("START\n");};
+assignment:                       ASSIGN expr ;
 
 expr:                             expr op value | value;
 
 value:                            func_call | constant | arr; 
 
-arr:                              arr '[' data ']' | ID;
+arr:                              arr '[' data ']' | ID; 
 
 data:                             INT_CONST | ID; 
 
