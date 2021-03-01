@@ -20,6 +20,8 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 "."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext); return FUNC_ID;}
 
 
+";"				return ';';
+
 "++"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
 				 //return INC;
@@ -85,15 +87,9 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 return GTE;
 				 }
 				 
-"<"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 return LT;
-				 }
+"<"				return '<';
 
-">"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 return GT;
-				 }
+">"				return '>';
 
 "equals"			{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -105,47 +101,20 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 return NEQ;
 				 }
 
-";"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return TER;
-				 }
+"{"				return '{';
+"}"				return '}';
 
-"{"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return BEGIN;
-				 }
+"("				return '(';
 
-"}"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return END;
-				 }
+")"				return ')';
 
-"("				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return FUNBEG;
-				 }
+"["				return '[';
 
-")"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return FUNEND;
-				 }
+"]"				return ']';
 
-"["				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return ARRBEG;
-				 }
+","				return ',';
 
-"]"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return ARREND;
-				 }
-
-","				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return SEP;
-				 }
-
-[a-zA-Z][a-zA-Z0-9]*           {printf("Hey\n"); printf("Variable Identifier: %s\n", yytext); strcpy(yylval.ystr, yytext); return ID;}
+[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); return ID;}
 
 "\\\""				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -189,9 +158,9 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //return WS;
 				 }	
 
-{comment}                      {printf("%s\n", yytext);};
+{comment}        {printf("%s\n", yytext);};
 
-(.|[\n])			;
+[ \t\n]			;
 
 
 %%
@@ -203,7 +172,6 @@ int res_id[16] = {IF, ELSE, ELIF, LOOP, SHOW, TAKE, RET, VOID, START, INT, DOUBL
 
 // These will later be commented out
 /*
-
 int main(int argc, char* argv[]) {
 	FILE* file = fopen(argv[1],"r");
 	if(file==NULL) {
