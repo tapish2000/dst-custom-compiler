@@ -16,7 +16,7 @@ int yylex();
 }
 		  
 
-%token <yint> ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
+%token <yint> ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE EQ NEQ NOT
 %token <yint> FUNC_ID ID
 %token <yint> INT_CONST STR_CONST BOOL_CONST FLOAT_CONST
 %token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
@@ -108,7 +108,7 @@ expr:                             expr op value | value;
 
 value:                            func_call | constant | arr; 
 
-arr:                              ARR '[' data ']' | ID; 
+arr:                              {printf("arr[i]\n");} arr '[' data ']' | ID; 
 
 data:                             INT_CONST | ID; 
 
@@ -116,7 +116,7 @@ data_type:                        INT | BOOL | STR | DOUBLE | VOID;
 
 op:                               ADD | SUB | MUL | DIV; 
 
-rel_op:                           LTE | GTE | LT | GT | EQ | NEQ;
+rel_op:                           LTE | GTE | '<' | '>' | EQ | NEQ;
 
 bi_logic_cond:                    AND | OR  | XOR;
 
