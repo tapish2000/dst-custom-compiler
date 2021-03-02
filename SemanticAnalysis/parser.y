@@ -2,10 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "Definitions.h"
 extern FILE * yyin;
 
 int yyerror(char*);
 int yylex();
+
+struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
+struct Hash_Table Methods_table;
 
 %}
 
@@ -142,4 +146,28 @@ int main(int argc, char *argv[])
 int yyerror(char *s) {
   printf("\nError: %s\n",s);
   return 0;
+}
+
+/* ------------------- Handling Hash Tables --------------- */
+
+void Intialize_Tables(){
+  for(int i=0;i<SYM_TABLE_SIZE;i++){
+    Methods_table.sym_table[i] = NULL;
+    for(int j=0;j<SYM_TABLE_SIZE;j++){
+      Symbols_Table[i].sym_table[j] = NULL;
+    }
+  }
+}
+
+void Print_Tables(){
+  printf("------- Method Table ---------\n");
+  for(int i=0;i<SYM_TABLE_SIZE;i++){
+    printf("%s\n",Methods_table.sym_table[i]);
+  }
+  printf("------- Symbol tables ---------\n");
+  for(int i=0;i<SYM_TABLE_SIZE;i++){
+    for(int j=0;j<SYM_TABLE_SIZE;j++){
+      printf("%s\n",Symbols_Table[i].sym_table[j]);
+    }
+  }
 }
