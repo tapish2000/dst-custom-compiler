@@ -41,3 +41,4 @@ struct Ast_node {
 /* ----------------------- Function Prototypes -------------------------*/
 
 void Intialize_Tables();
+void Print_Tables();
