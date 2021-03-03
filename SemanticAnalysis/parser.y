@@ -1,28 +1,36 @@
 %{
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "Definitions.h"
 extern FILE * yyin;
 
 int yyerror(char*);
 int yylex();
 
+struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
+struct Hash_Table Methods_table;
+
 %}
 
 %union {
-	char str[10];
   int yint;
-  char ystr[100];
+  double ydou;
+  //boolean ybool;
+  char yid[100];
+  char ystr[300];
 }
 		  
 
-%token <yint> ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE LT GT EQ NEQ NOT
-%token <yint> FUNC_ID ID
-%token <yint> INT_CONST STR_CONST BOOL_CONST FLOAT_CONST
-%token <yint> IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
+%token ADD SUB MUL DIV ASSIGN AND OR XOR LTE GTE EQ NEQ NOT
+%token <yid> FUNC_ID ID
+%token <yint> INT_CONST BOOL_CONST
+%token <ydou> FLOAT_CONST
+%token <ystr> STR_CONST 
+%token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
 %%
-program:                          functions START '{' stmts_list '}';
+program:                          functions START{ printf("START\n");} '{' stmts_list '}';
 
 functions:                        functions function 
                                   |  ;
@@ -138,4 +146,28 @@ int main(int argc, char *argv[])
 int yyerror(char *s) {
   printf("\nError: %s\n",s);
   return 0;
+}
+
+/* ------------------- Handling Hash Tables --------------- */
+
+void Intialize_Tables(){
+  for(int i=0;i<SYM_TABLE_SIZE;i++){
+    Methods_table.sym_table[i] = NULL;
+    for(int j=0;j<SYM_TABLE_SIZE;j++){
+      Symbols_Table[i].sym_table[j] = NULL;
+    }
+  }
+}
+
+void Print_Tables(){
+  printf("------- Method Table ---------\n");
+  for(int i=0;i<SYM_TABLE_SIZE;i++){
+    printf("%s\n",Methods_table.sym_table[i]);
+  }
+  printf("------- Symbol tables ---------\n");
+  for(int i=0;i<SYM_TABLE_SIZE;i++){
+    for(int j=0;j<SYM_TABLE_SIZE;j++){
+      printf("%s\n",Symbols_Table[i].sym_table[j]);
+    }
+  }
 }

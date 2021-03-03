@@ -1,8 +1,6 @@
 %{
     #include <stdio.h>
-    #include <string.h>
     #include "y.tab.h"
-    
 	int is_keyword(char* s);
 %}
 
@@ -11,26 +9,16 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 %%
 
-{keywords}                              {printf("Reserved_words: %s\n",yytext); return is_keyword(yytext);}
-[0-9][0-9]*					            {printf("Integer: %s\n",yytext); return INT_CONST;}	
-[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext); return FLOAT_CONST;}
-"true"                                  {printf("Boolean: %s\n",yytext); return BOOL_CONST;}
-"false"									{printf("Boolean: %s\n",yytext); return BOOL_CONST;}
-"\"".*"\""                              {printf("String: %s",yytext); return STR_CONST;}
-"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext); return FUNC_ID;}
+{keywords}                              {printf("Reserved_words: %s\n",yytext);      return is_keyword(yytext);}
+[0-9][0-9]*					            {printf("Integer: %s\n",yytext); 		 	 yylval.yint = atoi(yytext); return INT_CONST;}	
+[0-9]+"."[0-9]+				            {printf("Double: %s\n",yytext); 			 yylval.ydou = atoi(yytext); return FLOAT_CONST;}
+"true"                      			{printf("Boolean: %s\n",yytext); 			 yylval.yint = 0; return BOOL_CONST;}
+"false"                   				{printf("Boolean: %s\n",yytext); 			 yylval.yint = 1; return BOOL_CONST;}
+"\"".*"\""                              {printf("String: %s\n",yytext); 			 strcpy(yylval.ystr, yytext); return STR_CONST;}
+"."[a-zA-Z][a-zA-Z0-9]*                 {printf("Function Identifier: %s\n",yytext); strcpy(yylval.yid, yytext); return FUNC_ID;}
 
 
 ";"				return ';';
-
-"++"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return INC;
-				 }
-
-"--"				{printf("%s\n",yytext);
-				 //strcpy(yylval.str, yytext);
-				 //return DEC;
-				 }
 
 "+"				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
@@ -86,7 +74,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 //strcpy(yylval.str, yytext);
 				 return GTE;
 				 }
-				 
+
 "<"				return '<';
 
 ">"				return '>';
@@ -115,7 +103,7 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 ","				return ',';
 
-[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); return ID;}
+[a-zA-Z][a-zA-Z0-9]*           {printf("Variable Identifier: %s\n", yytext); strcpy(yylval.yid, yytext); return ID;}
 
 "\\\""				{printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
