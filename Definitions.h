@@ -40,22 +40,24 @@
 #define astStr 532
 #define astDouble 533
 #define astVoid 534
-#define astSub 535
-#define astMul 536
-#define astDiv 537
-#define astLte 538
-#define astGte 539
-#define astLt 540
-#define astGt 541
-#define astEq 542
-#define astNeq 543
-#define astAnd 544
-#define astOr 545
-#define astXor 546
-#define astIntConst 547
-#define astStrConst 548
-#define astBoolConst 549
-#define astFloatConst 550
+#define astAdd 535
+#define astSub 536
+#define astMul 537
+#define astDiv 538
+#define astLte 539
+#define astGte 540
+#define astLt 541
+#define astGt 542
+#define astEq 543
+#define astNeq 544
+#define astAnd 545
+#define astOr 546
+#define astXor 547
+#define astIntConst 548
+#define astStrConst 549
+#define astBoolConst 550
+#define astFloatConst 551
+#define astId 552
 
 union Value{
   int ivalue;
@@ -108,3 +110,4 @@ void add_variable(struct Symbol *symbp);
 struct Symbol *find_variable(char *s);
 void add_method(struct Symbol *symbp);
 struct Symbol *find_method(char *s);
+void traverse(struct Ast_node* p, int n);

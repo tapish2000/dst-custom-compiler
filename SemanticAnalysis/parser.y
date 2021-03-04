@@ -6,7 +6,7 @@ extern FILE * yyin;
 int yyerror(char*);
 int yylex();
 
-Ast_node* astroot;
+struct Ast_node* astroot;
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
@@ -32,11 +32,11 @@ struct Symbol *curMethod = NULL;
 %token <ystr> STR_CONST 
 %token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
-%type <node> program functions function function_name data_type paramas param_list param
+%type <node> program functions function function_name data_type params param_list param
 %type <node> stmts_list stmt withSemcol withoutSemcol
-%type <node> assign_stmt array_decl return_stmt func_call func_type func_name
-%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op
-%type <node> expr array_assign array_type array_decl assign_stmt assignment args_list args id_list
+%type <node> array_decl return_stmt func_call func_type
+%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
+%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
 %type <node> data constant arr value
 
 %%
@@ -48,7 +48,7 @@ program:                          functions START '{' stmts_list '}'
 
 functions:                        functions function 
                                   {
-                                    $$ = makenode(astFunctions, NULL, $1, $2, NULL, NULL);
+                                    $$ = makeNode(astFunctions, NULL, $1, $2, NULL, NULL);
                                   }
                                   | /* EMPTY */
                                   {
@@ -318,7 +318,7 @@ arr:                              arr '[' data ']'
                                   }
                                   | ID 
                                   {
-                                    $$ = makeNode(astArr, NULL, NULL, NULL, NULL, NULL);
+                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
                                   }; 
 
 data:                             INT_CONST 
@@ -327,7 +327,7 @@ data:                             INT_CONST
                                   }
                                   | ID
                                   {
-                                    $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
+                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
                                   }; 
 
 data_type:                        INT 
@@ -434,6 +434,7 @@ int main(int argc, char *argv[])
   Initialize_Tables();
   yyin = fopen(argv[1], "r");
   yyparse();
+  traverse(astroot, -3);
   return 0;
 }
 
@@ -557,9 +558,6 @@ void add_variable(struct Symbol *symbp)
    if(ptr) ptr->prev=symbp;
    Symbols_Table[curMethodID].symbols[i]=symbp;
    Symbols_Table[curMethodID].numbSymbols++;
-   
-   
-   
 }
 
 struct Symbol *find_variable(char *s)
@@ -605,4 +603,185 @@ struct Symbol *find_method(char *s)
    while(ptr && (strcmp(ptr->func_name,s) !=0))
       ptr = ptr->next;
    return ptr;
+}
+
+void spacing(int n)
+{  
+	int i;   
+	for(i=0; i<n; i++) printf(" ");
+}
+
+void traverse(struct Ast_node *p, int n)
+{  
+	int i;
+
+    n=n+3;
+    if(p)
+    {
+		switch (p->node_type)
+		{
+			case astProgram: 
+				spacing(n); printf("astProgram\n"); 
+				break;
+			case astFunctions: 
+				spacing(n); printf("astFunctions\n"); 
+				break;
+			case astFunction: 
+				spacing(n); printf("astFunction\n"); 
+				break;
+			case astFunctionName: 
+				spacing(n); printf("astFunctionName\n"); 
+				break;
+			case astParamList: 
+				spacing(n); printf("astParamList\n"); 
+				break;
+			case astStmtsList: 
+				spacing(n); printf("astStmtsList\n"); 
+				break;
+			case astBreak: 
+				spacing(n); printf("astBreak\n"); 
+				break;
+			case astContinue: 
+				spacing(n); printf("astContinue\n"); 
+				break;
+			case astAssignStmt: 
+				spacing(n); printf("astAssignStmt\n"); 
+				break;
+			case astLoop: 
+				spacing(n); printf("astLoop\n"); 
+				break;  
+			case astConditional: 
+				spacing(n); printf("astConditional\n"); 
+				break;   
+			case astRemaiCond: 
+				spacing(n); printf("astRemaiCond\n"); 
+				break;
+			case astElifStmts: 
+				spacing(n); printf("astElifStmts\n"); 
+				break;
+			case astElseStmt: 
+				spacing(n); printf("astElseStmt\n"); 
+				break;
+			case astConditions: 
+				spacing(n); printf("astConditions\n"); 
+				break;
+			case astBoolean:
+				spacing(n); printf("astBoolean\n"); 
+				break;
+			case astReturnStmt: 
+				spacing(n); printf("astReturnStmt\n"); 
+				break;
+			case astArrayDecl: 
+				spacing(n); printf("astArrayDecl\n"); 
+				break;
+			case astFuncCall: 
+				spacing(n); printf("astFuncCall\n"); 
+				break;
+			case astCustomFunc: 
+				spacing(n); printf("astCustomFunc\n"); 
+				break;
+			case astFuncShow: 
+				spacing(n); printf("astFuncShow\n"); 
+				break;
+			case astFuncTake: 
+				spacing(n); printf("astFuncTake\n"); 
+				break;
+			case astArgs:
+				spacing(n); printf("astArgs\n"); 
+				break;
+			case astArrayAssign: 
+				spacing(n); printf("astArrayAssign\n"); 
+				break;
+			case astIdList: 
+				spacing(n); printf("astIdList\n"); 
+				break;
+			case astParam: 
+				spacing(n); printf("astParam\n"); 
+				break;
+			case astAssignment: 
+				spacing(n); printf("astAssignment\n"); 
+				break;
+			case astExpr: 
+				spacing(n); printf("astExpr\n"); 
+				break;
+			case astArr: 
+				spacing(n); printf("astArr\n"); 
+				break;
+			case astData: 
+				spacing(n); printf("astData\n"); 
+				break;
+			case astInt: 
+				spacing(n); printf("astInt\n"); 
+				break;
+			case astBool: 
+				spacing(n); printf("astBool\n"); 
+				break;
+			case astStr: 
+				spacing(n); printf("astStr\n"); 
+				break;
+			case astDouble: 
+				spacing(n); printf("astDouble\n"); 
+				break;
+			case astVoid: 
+				spacing(n); printf("astVoid\n"); 
+				break;
+			case astAdd: 
+				spacing(n); printf("astAdd\n"); 
+				break;
+			case astSub: 
+				spacing(n); printf("astSub\n"); 
+				break;
+			case astMul: 
+				spacing(n); printf("astMul\n"); 
+				break;
+			case astDiv: 
+				spacing(n); printf("astDiv\n"); 
+				break;
+			case astLte:
+				spacing(n); printf("astLte\n"); 
+				break;
+			case astGte:
+				spacing(n); printf("astGte\n"); 
+				break;
+			case astLt:
+				spacing(n); printf("astLt\n"); 
+				break;
+			case astGt: 
+				spacing(n); printf("astGt\n"); 
+				break;
+			case astEq: 
+				spacing(n); printf("astEq\n"); 
+				break;
+			case astNeq: 
+				spacing(n); printf("astNeq\n"); 
+				break;
+			case astAnd: 
+				spacing(n); printf("astAnd\n");
+				break;
+			case astOr: 
+				spacing(n); printf("astOr\n"); 
+				break;
+			case astXor: 
+				spacing(n); printf("astXor\n"); 
+				break;
+			case astIntConst: 
+				spacing(n); printf("astIntConst\n"); 
+				break;
+			case astStrConst: 
+				spacing(n); printf("astStrConst\n"); 
+				break;
+			case astBoolConst: 
+				spacing(n); printf("astBoolConst\n"); 
+				break;
+			case astFloatConst: 
+				spacing(n); printf("astFloatConst\n"); 
+				break;
+      case astId:
+        spacing(n); printf("astId\n"); 
+				break;
+			default: 
+				printf("AGNOSTO=%d\n",p->node_type);
+		}
+		for(i=0; i<4; i++) traverse(p->child_node[i],n);
+	}
 }
