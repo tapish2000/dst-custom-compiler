@@ -5,7 +5,58 @@
 #define NAME_LEN 100
 #define SYM_TABLE_SIZE 40
 
-
+#define astProgram 500
+#define astFunctions 501
+#define astFunction 502
+#define astFunctionName 503
+#define astParamList 504
+#define astStmtsList 505
+#define astBreak 506
+#define astContinue 507
+#define astAssignStmt 508
+#define astLoop 509
+#define astConditional 510
+#define astRemaiCond 511
+#define astElifStmts 512
+#define astElseStmt 513
+#define astConditions 514
+#define astBoolean 515
+#define astReturnStmt 516
+#define astArrayDecl 517
+#define astFuncCall 518
+#define astCustomFunc 519
+#define astFuncShow 520
+#define astFuncTake 521
+#define astArgs 522
+#define astArrayAssign 523
+#define astIdList 524
+#define astParam 525
+#define astAssignment 526
+#define astExpr 527
+#define astArr 528
+#define astData 529
+#define astInt 530
+#define astBool 531
+#define astStr 532
+#define astDouble 533
+#define astVoid 534
+#define astAdd 535
+#define astSub 536
+#define astMul 537
+#define astDiv 538
+#define astLte 539
+#define astGte 540
+#define astLt 541
+#define astGt 542
+#define astEq 543
+#define astNeq 544
+#define astAnd 545
+#define astOr 546
+#define astXor 547
+#define astIntConst 548
+#define astStrConst 549
+#define astBoolConst 550
+#define astFloatConst 551
 
 union Value{
   int ivalue;

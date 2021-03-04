@@ -1,11 +1,12 @@
 %{
 #include "Definitions.h"
+#include <sys/queue.h>
 extern FILE * yyin;
 
 int yyerror(char*);
 int yylex();
 
-Ast_node* astroot;
+struct Ast_node* astroot;
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
@@ -20,7 +21,7 @@ struct Symbol *curMethod = NULL;
   //boolean ybool;
   char yid[100];
   char ystr[300];
-  struct Ast_node *node;
+  struct Ast_node* node;
 }
 		  
 
@@ -31,7 +32,12 @@ struct Symbol *curMethod = NULL;
 %token <ystr> STR_CONST 
 %token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
-%type <node> program functions function function_name params param_list
+%type <node> program functions function function_name data_type params param_list param
+%type <node> stmts_list stmt withSemcol withoutSemcol
+%type <node> array_decl return_stmt func_call func_type
+%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
+%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
+%type <node> data constant arr value
 
 %%
 program:                          functions START '{' stmts_list '}'
@@ -42,7 +48,7 @@ program:                          functions START '{' stmts_list '}'
 
 functions:                        functions function 
                                   {
-                                    $$ = makenode(astFunctions, NULL, $1, $2, NULL, NULL);
+                                    $$ = makeNode(astFunctions, NULL, $1, $2, NULL, NULL);
                                   }
                                   | /* EMPTY */
                                   {
