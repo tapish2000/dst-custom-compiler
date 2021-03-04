@@ -5,6 +5,8 @@
 #define NAME_LEN 100
 #define SYM_TABLE_SIZE 40
 
+
+
 union Value{
   int ivalue;
   double dvalue;
@@ -18,7 +20,7 @@ struct Symbol {
   int scope;                          /* Scope */
   union Value value;                  /* Value of the variable */
   int size;                           /* size of the variable */
-  char tag;                           /* a-Array, v-Variable, f-function */
+  char tag;                           /* a-Array, v-Variable, f-Function */
   int no_elements;                    /*  number of elements for an array, in case of a variable - 1 */
   int no_of_params;                   /* Number of parameters in a function */
   // int *param_list;                    /* List of parameters of a function */ 
@@ -43,10 +45,10 @@ struct Ast_node {
 
 /* ----------------------- Function Prototypes -------------------------*/
 
-void Intialize_Tables();
+void Initialize_Tables();
 void Print_Tables();
 
-struct Ast_node* makeNode(int type, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth);
+struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth);
 struct Symbol * makeSymbol(char *name, int type, int scope, int size,char tag,int no_elements,int no_of_params);
 
 void add_variable_to_table(struct Symbol *symbp);
