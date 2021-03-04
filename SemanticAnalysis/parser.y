@@ -1,7 +1,4 @@
 %{
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "Definitions.h"
 extern FILE * yyin;
 
@@ -9,8 +6,10 @@ int yyerror(char*);
 int yylex();
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
-struct Hash_Table Methods_table;
+struct Hash_Table methods_table;
 
+int curMethodID = 0;
+struct Symbol *curMethod = NULL;
 %}
 
 %union {
@@ -152,9 +151,9 @@ int yyerror(char *s) {
 
 void Intialize_Tables(){
   for(int i=0;i<SYM_TABLE_SIZE;i++){
-    Methods_table.sym_table[i] = NULL;
+    methods_table.symbols[i] = NULL;
     for(int j=0;j<SYM_TABLE_SIZE;j++){
-      Symbols_Table[i].sym_table[j] = NULL;
+      Symbols_Table[i].symbols[j] = NULL;
     }
   }
 }
@@ -162,12 +161,152 @@ void Intialize_Tables(){
 void Print_Tables(){
   printf("------- Method Table ---------\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
-    printf("%s\n",Methods_table.sym_table[i]);
+    printf("%s\n",methods_table.symbols[i]->name);
   }
   printf("------- Symbol tables ---------\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
     for(int j=0;j<SYM_TABLE_SIZE;j++){
-      printf("%s\n",Symbols_Table[i].sym_table[j]);
+      printf("%s\n",Symbols_Table[i].symbols[j]->name);
     }
   }
+}
+
+
+struct Ast_node* makeNode(int type, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth){
+  struct Ast_node * ptr = (struct Ast_node *)malloc(sizeof(struct Ast_node));
+  ptr->node_type = type;
+  ptr->child_node[0] = first;
+  ptr->child_node[1] = second;
+  ptr->child_node[2] = third;
+  ptr->child_node[3] = fourth;
+  return ptr;
+}
+
+struct Symbol * makeSymbol(char *name, int type, int scope, int size,char tag,int no_elements,int no_of_params){
+  struct Symbol* ptr = (struct Symbol*)malloc(sizeof(struct Symbol));
+  ptr->tag = tag;
+  if(tag == 'f'){
+    strcpy(ptr->func_name,name);
+  }else{
+    strcpy(ptr->name,name);
+  }
+  ptr->type = type;
+  ptr->scope = scope;
+  ptr->size = size;
+  ptr->no_elements = no_elements;
+  ptr->no_of_params = no_of_params;
+  ptr->symbol_table = NULL;
+  ptr->next = NULL;
+  ptr->prev = NULL;
+}
+
+void add_variable_to_table(struct Symbol *symbp)
+{  
+  struct Symbol *exists, *newsy;
+
+  newsy=symbp;
+   
+	exists=find_variable(newsy->name);
+	if( !exists )
+	{
+		add_variable(newsy);
+  }else
+  {
+    printf("%s redeclaration.\n",newsy->name);
+    exit(1);
+  }
+}
+
+void add_method_to_table(struct Symbol *symbp)
+{  
+  struct Symbol *exists, *newme;
+
+  newme=symbp;
+   
+	exists=find_method(newme->name);
+	if( !exists )
+	{
+		add_method(newme);
+  }
+    else
+    {
+        printf("%s redeclaration.\n",newme->name);
+        exit(1);
+    }
+}
+
+
+int genKey(char *s)
+{  char *p;
+   int athr=0;
+
+   for(p=s; *p; p++) athr=athr+(*p);
+   return (athr % SYM_TABLE_SIZE);
+}
+
+
+void add_variable(struct Symbol *symbp)
+{  
+   int i;
+   struct Symbol *ptr;
+
+  //  struct HashTable cur_table = Symbols_Table[curMethodID];
+   
+   i=genKey(symbp->name);
+   
+   ptr=Symbols_Table[curMethodID].symbols[i];
+   symbp->next=ptr;
+   symbp->prev=NULL;
+   
+   if(ptr) ptr->prev=symbp;
+   Symbols_Table[curMethodID].symbols[i]=symbp;
+   Symbols_Table[curMethodID].numbSymbols++;
+   
+   
+   
+}
+
+struct Symbol *find_variable(char *s)
+{  
+   int i;
+   struct Symbol *ptr;
+   
+   struct Hash_Table cur_table = Symbols_Table[curMethodID];
+
+   i = genKey(s);
+   ptr = cur_table.symbols[i];
+   
+   
+   while(ptr && (strcmp(ptr->name,s) !=0))
+      ptr=ptr->next;
+   return ptr;
+}
+
+void add_method(struct Symbol *symbp)
+{  int i;
+   struct Symbol *ptr;
+
+   i = genKey(symbp->func_name);
+   ptr = methods_table.symbols[i];
+   symbp->next = ptr;
+   symbp->prev = NULL;
+   symbp->symbol_table = &Symbols_Table[curMethodID];
+   if(ptr) ptr->prev = symbp;
+   methods_table.symbols[i] = symbp;
+   methods_table.numbSymbols++;
+   
+   curMethod = symbp;
+   
+}
+
+struct Symbol *find_method(char *s)
+{  int i;
+   struct Symbol *ptr;
+
+   i = genKey(s);
+   ptr = methods_table.symbols[i];
+   
+   while(ptr && (strcmp(ptr->func_name,s) !=0))
+      ptr = ptr->next;
+   return ptr;
 }
