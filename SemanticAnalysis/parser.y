@@ -20,7 +20,7 @@ struct Symbol *curMethod = NULL;
   //boolean ybool;
   char yid[100];
   char ystr[300];
-  struct Ast_node *node;
+  struct Ast_node* node;
 }
 		  
 
@@ -31,7 +31,12 @@ struct Symbol *curMethod = NULL;
 %token <ystr> STR_CONST 
 %token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
-%type <node> program functions function function_name params param_list
+%type <node> program functions function function_name data_type paramas param_list param
+%type <node> stmts_list stmt withSemcol withoutSemcol
+%type <node> assign_stmt array_decl return_stmt func_call func_type func_name
+%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op
+%type <node> expr array_assign array_type array_decl assign_stmt assignment args_list args id_list
+%type <node> data constant arr value
 
 %%
 program:                          functions START '{' stmts_list '}'
