@@ -58,6 +58,7 @@
 #define astBoolConst 550
 #define astFloatConst 551
 #define astId 552
+#define astArrayType 553
 
 union Value{
   int ivalue;
@@ -68,11 +69,14 @@ union Value{
 struct Symbol {
   char name[NAME_LEN];                /* Variable Name */
   char func_name[NAME_LEN];           /* Function Name */
-  int type;                           /* Datatype */
+  /*char* name;
+  char* func_name;*/
+  int type;                           /* Datatype 0-integer, 1-double, 2-string, 3-boolean*/
+  int method_type;                    /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/
   int scope;                          /* Scope */
   union Value value;                  /* Value of the variable */
   int size;                           /* size of the variable */
-  char tag;                           /* a-Array, v-Variable, f-Function */
+  char tag;                           /* a-Array, v-Variable, f-Function, c-Constant*/
   int no_elements;                    /*  number of elements for an array, in case of a variable - 1 */
   int no_of_params;                   /* Number of parameters in a function */
   // int *param_list;                    /* List of parameters of a function */ 
@@ -101,7 +105,7 @@ void Initialize_Tables();
 void Print_Tables();
 
 struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth);
-struct Symbol * makeSymbol(char *name, int type, int scope, int size,char tag,int no_elements,int no_of_params);
+struct Symbol * makeSymbol(char *name, int type, union Value* value, int scope, int size,char tag,int no_elements,int no_of_params);
 
 void add_variable_to_table(struct Symbol *symbp);
 void add_method_to_table(struct Symbol *symbp);

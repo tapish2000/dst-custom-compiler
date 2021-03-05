@@ -2,4 +2,5 @@ start {
   integer a is 5;
   integer b is 10;
   integer c is a + b;
+  double d is 10.5;
 }
