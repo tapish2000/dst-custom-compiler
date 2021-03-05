@@ -446,9 +446,9 @@ bi_logic_cond:                    AND
 constant:                         INT_CONST 
                                   {
                                     $$ = makeNode(astIntConst, NULL, NULL, NULL, NULL, NULL);
-                                    printf("Hey\n");
                                     value.ivalue = $1;
                                     sym = makeSymbol("intConst", 0, &value, 0, size, 'c', 1, 0);
+                                    printf("%s\n",sym->name);
                                   }
                                   | STR_CONST 
                                   {
