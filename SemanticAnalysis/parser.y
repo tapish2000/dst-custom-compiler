@@ -448,24 +448,28 @@ constant:                         INT_CONST
                                     $$ = makeNode(astIntConst, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
                                     sym = makeSymbol("intConst", 0, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | STR_CONST 
                                   {
                                     $$ = makeNode(astStrConst, NULL, NULL, NULL, NULL, NULL);
                                     strcpy(value.yvalue, $1);
                                     sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | BOOL_CONST 
                                   {
                                     $$ = makeNode(astBoolConst, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
                                     sym = makeSymbol("boolConst", 3, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | FLOAT_CONST
                                   {
                                     $$ = makeNode(astFloatConst, NULL, NULL, NULL, NULL, NULL);
                                     value.dvalue = $1;
                                     sym = makeSymbol("doubleConst", 1, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   };
 
 %%
@@ -522,7 +526,7 @@ void Print_Tables(){
     printf("%s\n",methods_table.symbols[i]->name);
   }*/
   printf("------- Symbol tables ---------\n");
-  printf("Variable Name\tValue\t\tDatatype\n");
+  printf("Variable Name\t\tValue\t\tDatatype\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
     for(int j=0;j<SYM_TABLE_SIZE;j++){
       if(Symbols_Table[i].symbols[j] != NULL) {
@@ -538,7 +542,7 @@ void Print_Tables(){
               printf("%f\tdouble\n",symb->value.dvalue);
               break;
             case 2:
-              printf("%s\tstring\n",symb->value.yvalue);
+              printf("%s\t\tstring\n",symb->value.yvalue);
               break;
             case 3:
               printf("%d\t\tboolean\n",symb->value.ivalue);
