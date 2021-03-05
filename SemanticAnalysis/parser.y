@@ -1,11 +1,5 @@
 %{
-<<<<<<< HEAD
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-=======
 #include "Definitions.h"
->>>>>>> 268afb5a72a7f635136cc12d2287aa97fb74d44a
 extern FILE * yyin;
 
 int yyerror(char*);

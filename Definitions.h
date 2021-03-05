@@ -16,17 +16,10 @@ struct Symbol {
   char func_name[NAME_LEN];           /* Function Name */
   int type;                           /* Datatype */
   int scope;                          /* Scope */
-<<<<<<< HEAD
-  union Value value;                  //Value of the variable
-  int size;                           //size of the variable
-  char tag;                           //a-Array, v-Variable, f-function
-  int no_elements;                    // number of elements for an array, in case of a variable - 1
-=======
   union Value value;                  /* Value of the variable */
   int size;                           /* size of the variable */
   char tag;                           /* a-Array, v-Variable, f-function */
   int no_elements;                    /*  number of elements for an array, in case of a variable - 1 */
->>>>>>> 268afb5a72a7f635136cc12d2287aa97fb74d44a
   int no_of_params;                   /* Number of parameters in a function */
   // int *param_list;                    /* List of parameters of a function */ 
   // int *arr_elements;                  /* Elements in an array */
