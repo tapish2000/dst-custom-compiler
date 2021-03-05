@@ -1,9 +1,12 @@
 %{
 #include "Definitions.h"
+#include <sys/queue.h>
 extern FILE * yyin;
 
 int yyerror(char*);
 int yylex();
+
+struct Ast_node* astroot;
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
@@ -18,6 +21,7 @@ struct Symbol *curMethod = NULL;
   //boolean ybool;
   char yid[100];
   char ystr[300];
+  struct Ast_node* node;
 }
 		  
 
@@ -28,106 +32,396 @@ struct Symbol *curMethod = NULL;
 %token <ystr> STR_CONST 
 %token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
 
+%type <node> program functions function function_name data_type params param_list param
+%type <node> stmts_list stmt withSemcol withoutSemcol
+%type <node> array_decl return_stmt func_call func_type
+%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
+%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
+%type <node> data constant arr value
+
 %%
-program:                          functions START{ printf("START\n");} '{' stmts_list '}';
+program:                          functions START '{' stmts_list '}'
+                                  {
+                                    astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
+                                  }
+                                  ;
 
 functions:                        functions function 
-                                  |  ;
+                                  {
+                                    $$ = makeNode(astFunctions, NULL, $1, $2, NULL, NULL);
+                                  }
+                                  | /* EMPTY */
+                                  {
+                                    $$ = NULL;
+                                  };
 
-function:                         function_name '{' stmts_list '}';
+function:                         function_name '{' stmts_list '}' 
+                                  {
+                                    $$ = makeNode(astFunction, NULL, $1, $3, NULL, NULL);
+                                  };
 
-function_name:                    data_type FUNC_ID '(' params ')';
+function_name:                    data_type FUNC_ID '(' params ')' 
+                                  {
+                                    $$ = makeNode(astFunctionName, NULL, $1, $4, NULL, NULL);
+                                  };
 
 params:                           param_list 
-                                  |  ;
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | /* EMPTY */ 
+                                  {
+                                    $$ = NULL;
+                                  };
 
 param_list:                       param_list ',' param 
-                                  | param;
+                                  {
+                                    $$ = makeNode(astParamList, NULL, $1, $3, NULL, NULL);
+                                  }
+                                  | param 
+                                  {
+                                    $$ = $1;
+                                  };
 
 stmts_list:                       stmt stmts_list 
-                                  |  ;
+                                  {
+                                    $$ = makeNode(astStmtsList, NULL, $1, $2, NULL, NULL);
+                                  }
+                                  | /* EMPTY */ 
+                                  {
+                                    $$ = NULL;
+                                  };
 
-stmt:                             withSemcol ';'
-                                  | withoutSemcol ;
+stmt:                             withSemcol ';' 
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | withoutSemcol 
+                                  {
+                                    $$ = $1;
+                                  };
 
 withSemcol:                       param 
+                                  {
+                                    $$ = $1;
+                                  }
                                   | assign_stmt
+                                  {
+                                    $$ = $1;
+                                  }
                                   | array_decl 
+                                  {
+                                    $$ = $1;
+                                  }
                                   | return_stmt 
+                                  {
+                                    $$ = $1;
+                                  }
                                   | func_call 
+                                  {
+                                    $$ = $1;
+                                  }
                                   | BREAK 
-                                  | CONT ;
+                                  {
+                                    $$ = makeNode(astBreak, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | CONT 
+                                  {
+                                    $$ = makeNode(astContinue, NULL, NULL, NULL, NULL, NULL);
+                                  };
                                   
 withoutSemcol:                    loop 
-                                  | conditional;
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | conditional
+                                  {
+                                    $$ = $1;
+                                  };
 
 assign_stmt:                      param assignment 
-                                  | arr assignment;
+                                  {
+                                    $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
+                                  }
+                                  | arr assignment
+                                  {
+                                    $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
+                                  };
 
-loop:                             LOOP '(' conditions ')' '{' stmts_list '}';
+loop:                             LOOP '(' conditions ')' '{' stmts_list '}'
+                                  {
+                                    $$ = makeNode(astLoop, NULL, $3, $6, NULL, NULL);
+                                  };
 
-conditional:                      IF '(' conditions ')' '{' stmts_list '}' remain_cond;
+conditional:                      IF '(' conditions ')' '{' stmts_list '}' remain_cond
+                                  {
+                                    $$ = makeNode(astConditional, NULL, $3, $6, $8, NULL);
+                                  };
 
-remain_cond:                      elif_stmts else_stmt
-                                  | ;
+remain_cond:                      elif_stmts else_stmt 
+                                  {
+                                    $$ = makeNode(astRemaiCond, NULL, $1, $2, NULL, NULL);
+                                  }
+                                  | /* EMPTY */ 
+                                  {
+                                    $$ = NULL;
+                                  };
 
-elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_list '}'
-                                  | ELIF '(' conditions ')' '{' stmts_list '}';
+elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_list '}' 
+                                  {
+                                    $$ = makeNode(astElifStmts, NULL, $1, $4, $7, NULL);
+                                  }
+                                  | ELIF '(' conditions ')' '{' stmts_list '}'
+                                  {
+                                    $$ = makeNode(astElifStmts, NULL, $3, $6, NULL, NULL);
+                                  };
 
-else_stmt:                        ELSE '{' stmts_list '}'
-                                  | ;
+else_stmt:                        ELSE '{' stmts_list '}' 
+                                  {
+                                    $$ = makeNode(astElseStmt, NULL, $3, NULL, NULL, NULL);
+                                  }
+                                  | /* EMPTY */ 
+                                  {
+                                    $$ = NULL;
+                                  };
 
 conditions:                       boolean 
-                                  | boolean bi_logic_cond conditions
-                                  | NOT conditions;
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | boolean bi_logic_cond conditions 
+                                  {
+                                    $$ = makeNode(astConditions, NULL, $1, $2, $3, NULL);
+                                  }
+                                  | NOT conditions 
+                                  {
+                                    $$ = makeNode(astConditions, NULL, $2, NULL, NULL, NULL);
+                                  };
 
 boolean:                          boolean  rel_op  expr 
-                                  | expr;
+                                  {
+                                    $$ = makeNode(astBoolean, NULL, $1, $2, $3, NULL);
+                                  }
+                                  | expr 
+                                  {
+                                    $$ = $1;
+                                  };
 
-return_stmt:                      RET expr;
+return_stmt:                      RET expr 
+                                  {
+                                    $$ = makeNode(astReturnStmt, NULL, $2, NULL, NULL, NULL);
+                                  };
 
-array_decl:                       ARR '<' array_type ',' data '>' ID array_assign;
+array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
+                                  {
+                                    $$ = makeNode(astArrayDecl, NULL, $3, $5, $8, NULL);
+                                  };
 
 array_type:                       data_type 
-                                  | array_decl;
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | array_decl
+                                  {
+                                    $$ = $1;
+                                  };
 
-func_call:                        func_type '(' args_list ')' ;
+func_call:                        func_type '(' args_list ')' 
+                                  {
+                                    $$ = makeNode(astFuncCall, NULL, $1, $3, NULL, NULL);
+                                  };
 
-func_type:                        FUNC_ID | SHOW |TAKE;
+func_type:                        FUNC_ID 
+                                  {
+                                    $$ = makeNode(astCustomFunc, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | SHOW 
+                                  {
+                                    $$ = makeNode(astFuncShow, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | TAKE
+                                  {
+                                    $$ = makeNode(astFuncTake, NULL, NULL, NULL, NULL, NULL);
+                                  };
 
 args_list:                        args 
-                                  |  ;
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | /* EMPTY */ 
+                                  {
+                                    $$ = NULL;
+                                  };
 
 args:                             args ',' expr 
-                                  | expr ;
+                                  {
+                                    $$ = makeNode(astArgs, NULL, $1, $3, NULL, NULL);
+                                  }
+                                  | expr 
+                                  {
+                                    $$ = $1;
+                                  };
 
-array_assign:                     ASSIGN '[' id_list ']' 
-                                  |  ;
+array_assign:                     ASSIGN '[' id_list ']'
+                                  {
+                                    $$ = makeNode(astArrayAssign, NULL, $3, NULL, NULL, NULL);
+                                  }
+                                  | /* EMPTY */ 
+                                  {
+                                    $$ = NULL;
+                                  };
 
 id_list:                          id_list ',' constant 
-                                  | constant ;
+                                  {
+                                    $$ = makeNode(astIdList, NULL, $1, $3, NULL, NULL);
+                                  }
+                                  | constant 
+                                  {
+                                    $$ = $1;
+                                  };
 
-param:                            data_type ID ;
+param:                            data_type ID 
+                                  {
+                                    $$ = makeNode(astParam, NULL, $1, NULL, NULL, NULL);
+                                  };
 
-assignment:                       ASSIGN expr ;
+assignment:                       ASSIGN expr 
+                                  {
+                                    $$ = makeNode(astAssignment, NULL, $2, NULL, NULL, NULL);
+                                  };
 
-expr:                             expr op value | value;
+expr:                             expr op value 
+                                  {
+                                    $$ = makeNode(astExpr, NULL, $1, $2, $3, NULL);
+                                  }
+                                  | value
+                                  {
+                                    $$ = $1;
+                                  };
 
-value:                            func_call | constant | arr; 
+value:                            func_call 
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | constant 
+                                  {
+                                    $$ = $1;
+                                  }
+                                  | arr
+                                  {
+                                    $$ = $1;
+                                  }; 
 
-arr:                              arr '[' data ']' | ID; 
+arr:                              arr '[' data ']' 
+                                  {
+                                    $$ = makeNode(astArr, NULL, $1, NULL, NULL, NULL);
+                                  }
+                                  | ID 
+                                  {
+                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
+                                  }; 
 
-data:                             INT_CONST | ID; 
+data:                             INT_CONST 
+                                  {
+                                    $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | ID
+                                  {
+                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
+                                  }; 
 
-data_type:                        INT | BOOL | STR | DOUBLE | VOID;
+data_type:                        INT 
+                                  {
+                                    $$ = makeNode(astInt, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | BOOL 
+                                  {
+                                    $$ = makeNode(astBool, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | STR 
+                                  {
+                                    $$ = makeNode(astStr, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | DOUBLE 
+                                  {
+                                    $$ = makeNode(astDouble, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | VOID
+                                  {
+                                    $$ = makeNode(astVoid, NULL, NULL, NULL, NULL, NULL);
+                                  };
 
-op:                               ADD | SUB | MUL | DIV; 
+op:                               ADD 
+                                  {
+                                    $$ = makeNode(astAdd, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | SUB 
+                                  {
+                                    $$ = makeNode(astSub, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | MUL 
+                                  {
+                                    $$ = makeNode(astMul, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | DIV
+                                  {
+                                    $$ = makeNode(astDiv, NULL, NULL, NULL, NULL, NULL);
+                                  }; 
 
-rel_op:                           LTE | GTE | '<' | '>' | EQ | NEQ;
+rel_op:                           LTE 
+                                  {
+                                    $$ = makeNode(astLte, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | GTE 
+                                  {
+                                    $$ = makeNode(astGte, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | '<' 
+                                  {
+                                    $$ = makeNode(astLt, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | '>' 
+                                  {
+                                    $$ = makeNode(astGt, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | EQ 
+                                  {
+                                    $$ = makeNode(astEq, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | NEQ
+                                  {
+                                    $$ = makeNode(astNeq, NULL, NULL, NULL, NULL, NULL);
+                                  };
 
-bi_logic_cond:                    AND | OR  | XOR;
+bi_logic_cond:                    AND 
+                                  {
+                                    $$ = makeNode(astAnd, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | OR 
+                                  {
+                                    $$ = makeNode(astOr, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | XOR
+                                  {
+                                    $$ = makeNode(astXor, NULL, NULL, NULL, NULL, NULL);
+                                  };
 
-constant:                         INT_CONST | STR_CONST | BOOL_CONST | FLOAT_CONST;
+constant:                         INT_CONST 
+                                  {
+                                    $$ = makeNode(astIntConst, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | STR_CONST 
+                                  {
+                                    $$ = makeNode(astStrConst, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | BOOL_CONST 
+                                  {
+                                    $$ = makeNode(astBoolConst, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | FLOAT_CONST
+                                  {
+                                    $$ = makeNode(astFloatConst, NULL, NULL, NULL, NULL, NULL);
+                                  };
 
 %%
 
@@ -137,8 +431,10 @@ int main(int argc, char *argv[])
       printf("\nUsage: <exefile> <inputfile>\n\n");
       exit(0);
   }
+  Initialize_Tables();
   yyin = fopen(argv[1], "r");
   yyparse();
+  traverse(astroot, -3);
   return 0;
 }
 
@@ -149,7 +445,7 @@ int yyerror(char *s) {
 
 /* ------------------- Handling Hash Tables --------------- */
 
-void Intialize_Tables(){
+void Initialize_Tables(){
   for(int i=0;i<SYM_TABLE_SIZE;i++){
     methods_table.symbols[i] = NULL;
     for(int j=0;j<SYM_TABLE_SIZE;j++){
@@ -172,9 +468,10 @@ void Print_Tables(){
 }
 
 
-struct Ast_node* makeNode(int type, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth){
+struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth){
   struct Ast_node * ptr = (struct Ast_node *)malloc(sizeof(struct Ast_node));
   ptr->node_type = type;
+  ptr->symbol_node = sn;
   ptr->child_node[0] = first;
   ptr->child_node[1] = second;
   ptr->child_node[2] = third;
@@ -186,9 +483,9 @@ struct Symbol * makeSymbol(char *name, int type, int scope, int size,char tag,in
   struct Symbol* ptr = (struct Symbol*)malloc(sizeof(struct Symbol));
   ptr->tag = tag;
   if(tag == 'f'){
-    strcpy(ptr->func_name,name);
+    strcpy(ptr->func_name, name);
   }else{
-    strcpy(ptr->name,name);
+    strcpy(ptr->name, name);
   }
   ptr->type = type;
   ptr->scope = scope;
@@ -261,9 +558,6 @@ void add_variable(struct Symbol *symbp)
    if(ptr) ptr->prev=symbp;
    Symbols_Table[curMethodID].symbols[i]=symbp;
    Symbols_Table[curMethodID].numbSymbols++;
-   
-   
-   
 }
 
 struct Symbol *find_variable(char *s)
@@ -309,4 +603,185 @@ struct Symbol *find_method(char *s)
    while(ptr && (strcmp(ptr->func_name,s) !=0))
       ptr = ptr->next;
    return ptr;
+}
+
+void spacing(int n)
+{  
+	int i;   
+	for(i=0; i<n; i++) printf(" ");
+}
+
+void traverse(struct Ast_node *p, int n)
+{  
+	int i;
+
+    n=n+3;
+    if(p)
+    {
+		switch (p->node_type)
+		{
+			case astProgram: 
+				spacing(n); printf("astProgram\n"); 
+				break;
+			case astFunctions: 
+				spacing(n); printf("astFunctions\n"); 
+				break;
+			case astFunction: 
+				spacing(n); printf("astFunction\n"); 
+				break;
+			case astFunctionName: 
+				spacing(n); printf("astFunctionName\n"); 
+				break;
+			case astParamList: 
+				spacing(n); printf("astParamList\n"); 
+				break;
+			case astStmtsList: 
+				spacing(n); printf("astStmtsList\n"); 
+				break;
+			case astBreak: 
+				spacing(n); printf("astBreak\n"); 
+				break;
+			case astContinue: 
+				spacing(n); printf("astContinue\n"); 
+				break;
+			case astAssignStmt: 
+				spacing(n); printf("astAssignStmt\n"); 
+				break;
+			case astLoop: 
+				spacing(n); printf("astLoop\n"); 
+				break;  
+			case astConditional: 
+				spacing(n); printf("astConditional\n"); 
+				break;   
+			case astRemaiCond: 
+				spacing(n); printf("astRemaiCond\n"); 
+				break;
+			case astElifStmts: 
+				spacing(n); printf("astElifStmts\n"); 
+				break;
+			case astElseStmt: 
+				spacing(n); printf("astElseStmt\n"); 
+				break;
+			case astConditions: 
+				spacing(n); printf("astConditions\n"); 
+				break;
+			case astBoolean:
+				spacing(n); printf("astBoolean\n"); 
+				break;
+			case astReturnStmt: 
+				spacing(n); printf("astReturnStmt\n"); 
+				break;
+			case astArrayDecl: 
+				spacing(n); printf("astArrayDecl\n"); 
+				break;
+			case astFuncCall: 
+				spacing(n); printf("astFuncCall\n"); 
+				break;
+			case astCustomFunc: 
+				spacing(n); printf("astCustomFunc\n"); 
+				break;
+			case astFuncShow: 
+				spacing(n); printf("astFuncShow\n"); 
+				break;
+			case astFuncTake: 
+				spacing(n); printf("astFuncTake\n"); 
+				break;
+			case astArgs:
+				spacing(n); printf("astArgs\n"); 
+				break;
+			case astArrayAssign: 
+				spacing(n); printf("astArrayAssign\n"); 
+				break;
+			case astIdList: 
+				spacing(n); printf("astIdList\n"); 
+				break;
+			case astParam: 
+				spacing(n); printf("astParam\n"); 
+				break;
+			case astAssignment: 
+				spacing(n); printf("astAssignment\n"); 
+				break;
+			case astExpr: 
+				spacing(n); printf("astExpr\n"); 
+				break;
+			case astArr: 
+				spacing(n); printf("astArr\n"); 
+				break;
+			case astData: 
+				spacing(n); printf("astData\n"); 
+				break;
+			case astInt: 
+				spacing(n); printf("astInt\n"); 
+				break;
+			case astBool: 
+				spacing(n); printf("astBool\n"); 
+				break;
+			case astStr: 
+				spacing(n); printf("astStr\n"); 
+				break;
+			case astDouble: 
+				spacing(n); printf("astDouble\n"); 
+				break;
+			case astVoid: 
+				spacing(n); printf("astVoid\n"); 
+				break;
+			case astAdd: 
+				spacing(n); printf("astAdd\n"); 
+				break;
+			case astSub: 
+				spacing(n); printf("astSub\n"); 
+				break;
+			case astMul: 
+				spacing(n); printf("astMul\n"); 
+				break;
+			case astDiv: 
+				spacing(n); printf("astDiv\n"); 
+				break;
+			case astLte:
+				spacing(n); printf("astLte\n"); 
+				break;
+			case astGte:
+				spacing(n); printf("astGte\n"); 
+				break;
+			case astLt:
+				spacing(n); printf("astLt\n"); 
+				break;
+			case astGt: 
+				spacing(n); printf("astGt\n"); 
+				break;
+			case astEq: 
+				spacing(n); printf("astEq\n"); 
+				break;
+			case astNeq: 
+				spacing(n); printf("astNeq\n"); 
+				break;
+			case astAnd: 
+				spacing(n); printf("astAnd\n");
+				break;
+			case astOr: 
+				spacing(n); printf("astOr\n"); 
+				break;
+			case astXor: 
+				spacing(n); printf("astXor\n"); 
+				break;
+			case astIntConst: 
+				spacing(n); printf("astIntConst\n"); 
+				break;
+			case astStrConst: 
+				spacing(n); printf("astStrConst\n"); 
+				break;
+			case astBoolConst: 
+				spacing(n); printf("astBoolConst\n"); 
+				break;
+			case astFloatConst: 
+				spacing(n); printf("astFloatConst\n"); 
+				break;
+      case astId:
+        spacing(n); printf("astId\n"); 
+				break;
+			default: 
+				printf("AGNOSTO=%d\n",p->node_type);
+		}
+		for(i=0; i<4; i++) traverse(p->child_node[i],n);
+	}
 }
