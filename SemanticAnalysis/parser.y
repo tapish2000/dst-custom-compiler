@@ -6,7 +6,14 @@ extern FILE * yyin;
 int yyerror(char*);
 int yylex();
 
+void default_value(int type);
+
 struct Ast_node* astroot;
+char* name;
+int type, size, no_elements;
+char tag;
+struct Symbol* sym;
+union Value value;
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
@@ -20,7 +27,7 @@ struct Symbol *curMethod = NULL;
   double ydou;
   //boolean ybool;
   char yid[100];
-  char ystr[300];
+  char* ystr;
   struct Ast_node* node;
 }
 		  
@@ -142,6 +149,7 @@ withoutSemcol:                    loop
 assign_stmt:                      param assignment 
                                   {
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
+                                    //sym = find_variable(param->)
                                   }
                                   | arr assignment
                                   {
@@ -215,15 +223,18 @@ return_stmt:                      RET expr
 array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
                                   {
                                     $$ = makeNode(astArrayDecl, NULL, $3, $5, $8, NULL);
+                                    default_value(type);
+                                    sym = makeSymbol($7, type, &value, 0, size, 'a', 0, 0);
+                                    add_variable_to_table(sym);
                                   };
 
 array_type:                       data_type 
                                   {
                                     $$ = $1;
                                   }
-                                  | array_decl
+                                  | ARR '<' array_type ',' data '>'
                                   {
-                                    $$ = $1;
+                                    $$ = makeNode(astArrayType, NULL, $3, $5, NULL, NULL);
                                   };
 
 func_call:                        func_type '(' args_list ')' 
@@ -283,6 +294,9 @@ id_list:                          id_list ',' constant
 param:                            data_type ID 
                                   {
                                     $$ = makeNode(astParam, NULL, $1, NULL, NULL, NULL);
+                                    default_value(type);
+                                    sym = makeSymbol($2, type, &value, 0, size, 'v', 1, 0);
+                                    add_variable_to_table(sym);
                                   };
 
 assignment:                       ASSIGN expr 
@@ -319,36 +333,59 @@ arr:                              arr '[' data ']'
                                   | ID 
                                   {
                                     $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
+                                    sym = NULL;
+                                    sym = find_variable($1); 
+                                    if(sym==NULL) {
+                                      printf("Error! Variable is not declared\n");
+                                    }
                                   }; 
 
 data:                             INT_CONST 
                                   {
                                     $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
+                                    value.ivalue = $1;
+                                    sym = makeSymbol("INT_CONST", 0, &value, 0, size, 'c', 1, 0);
                                   }
                                   | ID
                                   {
                                     $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
+                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
+                                    sym = NULL;
+                                    sym = find_variable($1); 
+                                    if(sym==NULL) {
+                                      printf("Error! Variable is not declared\n");
+                                    }
                                   }; 
 
 data_type:                        INT 
                                   {
                                     $$ = makeNode(astInt, NULL, NULL, NULL, NULL, NULL);
+                                    type = 0;
+                                    size = 4;
                                   }
                                   | BOOL 
                                   {
                                     $$ = makeNode(astBool, NULL, NULL, NULL, NULL, NULL);
+                                    type = 3;
+                                    size = 1;
                                   }
                                   | STR 
                                   {
                                     $$ = makeNode(astStr, NULL, NULL, NULL, NULL, NULL);
+                                    type = 2;
+                                    size = 0;
                                   }
                                   | DOUBLE 
                                   {
                                     $$ = makeNode(astDouble, NULL, NULL, NULL, NULL, NULL);
+                                    type = 1;
+                                    size = 8;
                                   }
                                   | VOID
                                   {
                                     $$ = makeNode(astVoid, NULL, NULL, NULL, NULL, NULL);
+                                    type = 4;
+                                    size = 0;
                                   };
 
 op:                               ADD 
@@ -409,18 +446,30 @@ bi_logic_cond:                    AND
 constant:                         INT_CONST 
                                   {
                                     $$ = makeNode(astIntConst, NULL, NULL, NULL, NULL, NULL);
+                                    value.ivalue = $1;
+                                    sym = makeSymbol("intConst", 0, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | STR_CONST 
                                   {
                                     $$ = makeNode(astStrConst, NULL, NULL, NULL, NULL, NULL);
+                                    strcpy(value.yvalue, $1);
+                                    sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | BOOL_CONST 
                                   {
                                     $$ = makeNode(astBoolConst, NULL, NULL, NULL, NULL, NULL);
+                                    value.ivalue = $1;
+                                    sym = makeSymbol("boolConst", 3, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | FLOAT_CONST
                                   {
                                     $$ = makeNode(astFloatConst, NULL, NULL, NULL, NULL, NULL);
+                                    value.dvalue = $1;
+                                    sym = makeSymbol("doubleConst", 1, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   };
 
 %%
@@ -435,12 +484,29 @@ int main(int argc, char *argv[])
   yyin = fopen(argv[1], "r");
   yyparse();
   traverse(astroot, -3);
+  Print_Tables();
   return 0;
 }
 
 int yyerror(char *s) {
   printf("\nError: %s\n",s);
   return 0;
+}
+
+void default_value(int type) {
+  switch(type) {
+    case 0:
+      value.ivalue = 0;
+      break;
+    case 1:
+      value.dvalue = 0;
+      break;
+    case 2:
+      strcpy(value.yvalue, "");
+      break;
+    case 3:
+      value.ivalue = 0;
+  }
 }
 
 /* ------------------- Handling Hash Tables --------------- */
@@ -455,14 +521,35 @@ void Initialize_Tables(){
 }
 
 void Print_Tables(){
-  printf("------- Method Table ---------\n");
+  /*printf("------- Method Table ---------\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
     printf("%s\n",methods_table.symbols[i]->name);
-  }
+  }*/
   printf("------- Symbol tables ---------\n");
+  printf("Variable Name\t\tValue\t\tDatatype\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
     for(int j=0;j<SYM_TABLE_SIZE;j++){
-      printf("%s\n",Symbols_Table[i].symbols[j]->name);
+      if(Symbols_Table[i].symbols[j] != NULL) {
+        struct Symbol* symb = Symbols_Table[i].symbols[j];
+        while(symb != NULL) {
+          printf("%s\t\t",symb->name);
+          type = symb->type;
+          switch(type) {
+            case 0:
+              printf("%d\t\tint\n",symb->value.ivalue);
+              break;
+            case 1:
+              printf("%f\tdouble\n",symb->value.dvalue);
+              break;
+            case 2:
+              printf("%s\t\tstring\n",symb->value.yvalue);
+              break;
+            case 3:
+              printf("%d\t\tboolean\n",symb->value.ivalue);
+          }
+          symb = symb->next;
+        }
+      }
     }
   }
 }
@@ -479,13 +566,26 @@ struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, s
   return ptr;
 }
 
-struct Symbol * makeSymbol(char *name, int type, int scope, int size,char tag,int no_elements,int no_of_params){
+struct Symbol * makeSymbol(char *name, int type, union Value* value, int scope, int size,char tag,int no_elements,int no_of_params){
   struct Symbol* ptr = (struct Symbol*)malloc(sizeof(struct Symbol));
   ptr->tag = tag;
   if(tag == 'f'){
     strcpy(ptr->func_name, name);
   }else{
     strcpy(ptr->name, name);
+  }
+  switch(type) {
+    case 0:
+      ptr->value.ivalue = value->ivalue;
+      break;
+    case 1:
+      ptr->value.dvalue = value->dvalue;
+      break;
+    case 2:
+      strcpy(ptr->value.yvalue, value->yvalue);
+      break;
+    case 3:
+      ptr->value.ivalue = value->ivalue;
   }
   ptr->type = type;
   ptr->scope = scope;
@@ -495,6 +595,8 @@ struct Symbol * makeSymbol(char *name, int type, int scope, int size,char tag,in
   ptr->symbol_table = NULL;
   ptr->next = NULL;
   ptr->prev = NULL;
+
+  return ptr;
 }
 
 void add_variable_to_table(struct Symbol *symbp)
@@ -502,7 +604,10 @@ void add_variable_to_table(struct Symbol *symbp)
   struct Symbol *exists, *newsy;
 
   newsy=symbp;
-   
+  if(symbp->tag == 'c'){
+    add_variable(newsy);
+  }
+  else{
 	exists=find_variable(newsy->name);
 	if( !exists )
 	{
@@ -511,6 +616,7 @@ void add_variable_to_table(struct Symbol *symbp)
   {
     printf("%s redeclaration.\n",newsy->name);
     exit(1);
+  }
   }
 }
 
