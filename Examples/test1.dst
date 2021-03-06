@@ -3,11 +3,11 @@ start{
     integer i is 0;
     loopif(i<10){
         if(arr[i] equals 2){
-            show("It is 2\n");
+            show();
         }elif(arr[i] equals 5){
-            show("It is 5\n");
+            show();
         }else{
-            show("A simple integer\n");
+            show();
         }
         i is i + 1;
     }

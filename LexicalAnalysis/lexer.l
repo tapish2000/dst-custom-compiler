@@ -106,34 +106,34 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 
 "\\\""				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return QUO;
+				 return QUO;
 				 }
 				 
 "\\'"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return QUO;
+				 return SQUO;
 				 }
 				 
 "\\#"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return HASH;
+				 return HASH;
 				 }
 
 
 "\\\\"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return BASL;
+				 return BASL;
 				 }
 				 
 "\\b"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return BASP;
+				 return BASP;
 				 }	
 				 
 
 "\\n"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 //return NEWL;
+				 return NEWL;
 				 }
 				 
 "\\t"				{//printf("%s\n",yytext);

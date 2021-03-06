@@ -4,6 +4,9 @@ integer .power(integer a, integer b){
   }
   return b*.power(a-1,b);
 }
+void .a() {
+  show();
+}
 # power(a,b) means b^a #
 start{
   integer n is take();

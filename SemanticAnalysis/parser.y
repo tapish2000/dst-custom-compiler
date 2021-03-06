@@ -10,7 +10,7 @@ void default_value(int type);
 
 struct Ast_node* astroot;
 char* name;
-int type, size, no_elements;
+int type, size, no_elements, no_of_params;
 char tag;
 struct Symbol* sym;
 union Value value;
@@ -37,7 +37,7 @@ struct Symbol *curMethod = NULL;
 %token <yint> INT_CONST BOOL_CONST
 %token <ydou> FLOAT_CONST
 %token <ystr> STR_CONST 
-%token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT
+%token IF ELSE ELIF LOOP SHOW TAKE RET VOID START INT DOUBLE STR BOOL ARR BREAK CONT NEWL HASH QUO SQUO BASL BASP
 
 %type <node> program functions function function_name data_type params param_list param
 %type <node> stmts_list stmt withSemcol withoutSemcol
@@ -65,11 +65,15 @@ functions:                        functions function
 function:                         function_name '{' stmts_list '}' 
                                   {
                                     $$ = makeNode(astFunction, NULL, $1, $3, NULL, NULL);
+
                                   };
 
 function_name:                    data_type FUNC_ID '(' params ')' 
                                   {
                                     $$ = makeNode(astFunctionName, NULL, $1, $4, NULL, NULL);
+                                    default_value(type);
+                                    sym = makeSymbol($2, type, &value, 0, 0, 'f', 0, no_of_params);
+                                    add_method_to_table(sym);
                                   };
 
 params:                           param_list 
@@ -79,15 +83,18 @@ params:                           param_list
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
+                                    no_of_params = 0;
                                   };
 
 param_list:                       param_list ',' param 
                                   {
                                     $$ = makeNode(astParamList, NULL, $1, $3, NULL, NULL);
+                                    no_of_params++;
                                   }
                                   | param 
                                   {
                                     $$ = $1;
+                                    no_of_params=1;
                                   };
 
 stmts_list:                       stmt stmts_list 
@@ -453,9 +460,9 @@ constant:                         INT_CONST
                                   | STR_CONST 
                                   {
                                     $$ = makeNode(astStrConst, NULL, NULL, NULL, NULL, NULL);
-                                    strcpy(value.yvalue, $1);
-                                    sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
-                                    add_variable_to_table(sym);
+                                    //trcpy(value.yvalue, $1);
+                                    //sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
+                                    //add_variable_to_table(sym);
                                   }
                                   | BOOL_CONST 
                                   {
@@ -521,10 +528,31 @@ void Initialize_Tables(){
 }
 
 void Print_Tables(){
-  /*printf("------- Method Table ---------\n");
+  printf("------- Method Table ---------\n");
+  printf("Function Name\tParams_count\tReturn Type\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
-    printf("%s\n",methods_table.symbols[i]->name);
-  }*/
+    if(methods_table.symbols[i] != NULL) {
+      struct Symbol* symb = methods_table.symbols[i];
+      printf("%s\t\t%d\t\t",symb->func_name,symb->no_of_params);
+      type = symb->type;
+        switch(type) {
+          case 0:
+            printf("int\n");
+            break;
+          case 1:
+            printf("double\n");
+            break;
+          case 2:
+            printf("string\n");
+            break;
+          case 3:
+            printf("boolean\n");
+            break;
+          case 4:
+            printf("void\n");
+        }
+    }
+  }
   printf("------- Symbol tables ---------\n");
   printf("Variable Name\t\tValue\t\tDatatype\n");
   for(int i=0;i<SYM_TABLE_SIZE;i++){
