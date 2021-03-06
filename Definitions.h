@@ -63,7 +63,7 @@
 union Value{
   int ivalue;
   double dvalue;
-  char* yvalue;
+  char yvalue[300];
 };
 
 struct Symbol {
