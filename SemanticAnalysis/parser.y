@@ -27,7 +27,7 @@ struct Symbol *curMethod = NULL;
   double ydou;
   //boolean ybool;
   char yid[100];
-  char* ystr;
+  char ystr[300];
   struct Ast_node* node;
 }
 		  
@@ -379,8 +379,10 @@ data_type:                        INT
                                   | STR 
                                   {
                                     $$ = makeNode(astStr, NULL, NULL, NULL, NULL, NULL);
+                                    printf("Hey str\n");
                                     type = 2;
                                     size = 0;
+                                    printf("Hey str\n");
                                   }
                                   | DOUBLE 
                                   {

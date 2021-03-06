@@ -127,13 +127,13 @@ keywords (if|else|elif|loopif|show|take|return|void|start|integer|double|string|
 				 
 "\\b"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 return BASP;
+				 //return BASP;
 				 }	
 				 
 
 "\\n"				{//printf("%s\n",yytext);
 				 //strcpy(yylval.str, yytext);
-				 return NEWL;
+				 //return NEWL;
 				 }
 				 
 "\\t"				{//printf("%s\n",yytext);

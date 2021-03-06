@@ -3,4 +3,5 @@ start {
   integer b is 10;
   integer c is a + b;
   double d is 10.5;
+  string s is "Hello";
 }
