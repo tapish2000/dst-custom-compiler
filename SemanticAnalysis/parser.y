@@ -460,9 +460,9 @@ constant:                         INT_CONST
                                   | STR_CONST 
                                   {
                                     $$ = makeNode(astStrConst, NULL, NULL, NULL, NULL, NULL);
-                                    //trcpy(value.yvalue, $1);
-                                    //sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
-                                    //add_variable_to_table(sym);
+                                    strcpy(value.yvalue, $1);
+                                    sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
+                                    add_variable_to_table(sym);
                                   }
                                   | BOOL_CONST 
                                   {
