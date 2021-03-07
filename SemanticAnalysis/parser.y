@@ -50,6 +50,9 @@ struct Symbol *curMethod = NULL;
 program:                          functions START '{' stmts_list '}'
                                   {
                                     astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
+
+                                    sym = makeSymbol("start",'5',NULL,0,1,'v',0,0);
+                                    add_variable_to_table(sym);
                                   }
                                   ;
 
