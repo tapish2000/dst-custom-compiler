@@ -13,6 +13,7 @@ char* name;
 int type, size, no_elements, no_of_params;
 char tag;
 struct Symbol* sym;
+struct Symbol *currmethod;
 union Value value;
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
@@ -156,7 +157,7 @@ withoutSemcol:                    loop
 assign_stmt:                      param assignment 
                                   {
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
-                                    //sym = find_variable(param->)
+                                    // sym = find_variable(param->)
                                   }
                                   | arr assignment
                                   {
@@ -224,7 +225,10 @@ boolean:                          boolean  rel_op  expr
 
 return_stmt:                      RET expr 
                                   {
-                                    $$ = makeNode(astReturnStmt, NULL, $2, NULL, NULL, NULL);
+
+                                    /* Check if the type of currmethod and the return type (pop from stack) are same */
+
+                                    $$ = makeNode(astReturnStmt, currmethod, $2, NULL, NULL, NULL);
                                   };
 
 array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
@@ -661,11 +665,12 @@ void add_method_to_table(struct Symbol *symbp)
 	{
 		add_method(newme);
   }
-    else
-    {
-        printf("%s redeclaration.\n",newme->name);
-        exit(1);
-    }
+  else
+  {
+      printf("%s redeclaration.\n",newme->name);
+      exit(1);
+  }
+  currmethod = symbp;
 }
 
 
