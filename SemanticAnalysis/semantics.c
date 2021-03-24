@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include "Definitions.h"
 
+/************ Global Varables ****************/
+FILE* asmCode; // for asm code file 
+FILE* asmData; // for asm data
+
 /************ Tree traversal for output ************/
 /************ Required subroutines for code generation *******/
 void processProgram(struct Ast_node *p){}
@@ -57,6 +61,9 @@ void processBoolConst(struct Ast_node *p){}
 void processFloatConst(struct Ast_node *p){}
 void processId(struct Ast_node *p){}
 
+/************ Initializer of asm files ****************/
+
+void initialCode(){}
 
 /************ Code generation by traversing Tree ***************/
 void generate(struct Ast_node *p){
@@ -222,3 +229,5 @@ void generate(struct Ast_node *p){
             break;
     }
 }
+
+/************ Starter FUnctions *************/
