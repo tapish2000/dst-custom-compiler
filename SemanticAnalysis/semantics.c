@@ -62,110 +62,163 @@ void processId(struct Ast_node *p){}
 void generate(struct Ast_node *p){
     switch (p->node_type){
         case astProgram:
+            processProgram(p);
             break;
         case astFunctions: 
+            processFunction(p);
             break;
         case astFunction: 
+            processFunction(p);
             break;
         case astFunctionName: 
+            processFunctionName(p);
             break;
-        case astParamList: 
+        case astParamList:
+            processParamList(p);
             break;
-        case astStmtsList: 
+        case astStmtsList:
+            processStmtsList(p);
             break;
-        case astBreak: 
+        case astBreak:
+            processBreak(p);
             break;
-        case astContinue: 
+        case astContinue:
+            processContinue(p);
             break;
-        case astAssignStmt: 
+        case astAssignStmt:
+            processAssignStmt(p);
             break;
-        case astLoop: 
+        case astLoop:
+            processLoop(p);
             break;  
-        case astConditional: 
+        case astConditional:
+            processConditional(p); 
             break;   
-        case astRemaiCond: 
+        case astRemaiCond:
+            processRemaiCond(p);
             break;
-        case astElifStmts: 
+        case astElifStmts:
+            processElifStmts(p);
             break;
-        case astElseStmt: 
+        case astElseStmt:
+            processElseStmt(p);
             break;
         case astConditions:
+            processConditions(p);
             break;
         case astBoolean:
+            processBoolean(p);
             break;
         case astReturnStmt: 
+            processReturnStmt(p);
             break;
         case astArrayDecl: 
+            processArrayDecl(p);
             break;
         case astFuncCall:
+            processFuncCall(p);
             break;
         case astCustomFunc:
+            processCustomFunc(p);
             break;
-        case astFuncShow: 
+        case astFuncShow:
+            processFuncShow(p);
             break;
-        case astFuncTake: 
+        case astFuncTake:
+            processFuncTake(p);
             break;
         case astArgs:
+            processArgs(p);
             break;
         case astArrayAssign:
+            processArrayAssign(p);
             break;
         case astIdList: 
+            processIdList(p);
             break;
-        case astParam: 
+        case astParam:
+            processParam(p);
             break;
         case astAssignment:
+            processAssignment(p);
             break;
-        case astExpr: 
+        case astExpr:
+            processExpr(p);
             break;
-        case astArr: 
+        case astArr:
+            processArr(p);
             break;
         case astData:
+            processData(p);
             break;
-        case astInt: 
+        case astInt:
+            processInt(p);
             break;
         case astBool:
+            processBool(p);
             break;
-        case astStr: 
+        case astStr:
+            processStr(p);
             break;
         case astDouble:
+            processDouble(p);
             break;
-        case astVoid: 
+        case astVoid:
+            processVoid(p);
             break;
-        case astAdd: 
+        case astAdd:
+            processAdd(p);
             break;
         case astSub: 
+            processSub(p);
             break;
-        case astMul: 
+        case astMul:
+            processMul(p);
             break;
         case astDiv: 
+            processDiv(p);
             break;
         case astLte:
+            processLte(p);
             break;
         case astGte:
+            processGte(p);
             break;
         case astLt:
+            processLt(p);
             break;
-        case astGt: 
+        case astGt:
+            processGt(p);
             break;
-        case astEq: 
+        case astEq:
+            processEq(p);
             break;
         case astNeq:
+            processNeq(p);
             break;
-        case astAnd: 
+        case astAnd:
+            processAnd(p);
             break;
-        case astOr: 
+        case astOr:
+            processOr(p);
             break;
         case astXor:
+            processXor(p);
             break;
-        case astIntConst: 
+        case astIntConst:
+            processIntConst(p);
             break;
-        case astStrConst: 
+        case astStrConst:
+            processStrConst(p);
             break;
         case astBoolConst:
+            processBoolConst(p);
             break;
         case astFloatConst:
+            processFloatConst(p);
             break;
         case astId:
+            processId(p);
             break;
     }
 }
