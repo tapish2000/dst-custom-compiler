@@ -13,7 +13,16 @@ char* name;
 int type, size, no_elements, no_of_params;
 char tag;
 struct Symbol* sym;
+struct Symbol *currmethod;
 union Value value;
+
+int enableRetStuck = 1;
+int TopOfWhileStack=-1;
+struct Symbol *while_stack[30];
+int TopOfRetStack=-1;
+struct Symbol *ret_stack[30];
+int TopOfStack=-1;
+struct Symbol *vs[30];
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
@@ -50,6 +59,9 @@ struct Symbol *curMethod = NULL;
 program:                          functions START '{' stmts_list '}'
                                   {
                                     astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
+
+                                    sym = makeSymbol("start",'5',NULL,0,1,'v',0,0);
+                                    add_variable_to_table(sym);
                                   }
                                   ;
 
@@ -156,7 +168,7 @@ withoutSemcol:                    loop
 assign_stmt:                      param assignment 
                                   {
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
-                                    //sym = find_variable(param->)
+                                    // sym = find_variable(param->)
                                   }
                                   | arr assignment
                                   {
@@ -224,7 +236,10 @@ boolean:                          boolean  rel_op  expr
 
 return_stmt:                      RET expr 
                                   {
-                                    $$ = makeNode(astReturnStmt, NULL, $2, NULL, NULL, NULL);
+
+                                    /* Check if the type of currmethod and the return type (pop from stack) are same */
+
+                                    $$ = makeNode(astReturnStmt, currmethod, $2, NULL, NULL, NULL);
                                   };
 
 array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
@@ -584,6 +599,102 @@ void Print_Tables(){
   }
 }
 
+//Stack
+
+void Show_VStack(){
+	printf("\n--- VARIABLE STACK ---\n");
+	for (int i=TopOfStack; i>=0; i--){
+		printf("%s\n", vs[i]);
+	}
+	printf("--- END ---\n");
+}
+
+void push_vs(struct Symbol *p)
+{
+   vs[++TopOfStack]=p;
+}
+
+struct Symbol *pop_vs()
+{
+   return(vs[TopOfStack--]);
+}
+
+void Show_Ret_Stack(){
+	printf("\n--- RETURN STACK ---\n");
+	for (int i=TopOfRetStack; i>=0; i--){
+		printf("%s\n", ret_stack[i]);
+	}
+	printf("--- END ---\n");
+}
+
+void push_ret(struct Symbol *p)
+{
+	ret_stack[++TopOfRetStack]=p;
+}
+
+struct Symbol *pop_ret()
+{
+	return(ret_stack[TopOfRetStack--]);
+}
+
+
+int check_has_return(){
+	
+	struct Symbol *first, *second;
+	
+	first = ret_stack[0];
+	second = ret_stack[1];
+	
+	
+	if (TopOfRetStack > 0 && first && second && strcmp(first->name, "start") == 0 && strcmp(second->name, "return") == 0){
+		pop_ret();
+		pop_ret();
+		return 1;
+	} else {
+		return 0;
+	}
+	
+}
+
+struct Symbol* peek_while()
+{
+   return while_stack[TopOfWhileStack];
+}
+
+void push_while(struct Symbol* whileSym)
+{
+   while_stack[++TopOfWhileStack]=whileSym;
+}
+
+struct Symbol *pop_while()
+{
+	if(TopOfWhileStack<0){
+		return(NULL);
+	}
+	
+	struct Symbol * temp;
+	temp = while_stack[TopOfWhileStack--];
+	while_stack[TopOfWhileStack+1] = NULL;   
+	return(temp);
+}
+
+void Init_While_Stack(){
+	int i;
+	for(i=0; i<30; i++){
+		while_stack[i] = NULL;
+	}
+	
+}
+
+void Show_While_Stack(){
+	printf("\n--- WHILE STACK ---\n");
+	for (int i=TopOfWhileStack; i>=0; i--){
+		printf("%d\n", while_stack[i]->value);
+	}
+	printf("--- END ---\n");
+}
+
+//Syntax
 
 struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth){
   struct Ast_node * ptr = (struct Ast_node *)malloc(sizeof(struct Ast_node));
@@ -661,11 +772,12 @@ void add_method_to_table(struct Symbol *symbp)
 	{
 		add_method(newme);
   }
-    else
-    {
-        printf("%s redeclaration.\n",newme->name);
-        exit(1);
-    }
+  else
+  {
+      printf("%s redeclaration.\n",newme->name);
+      exit(1);
+  }
+  currmethod = symbp;
 }
 
 
