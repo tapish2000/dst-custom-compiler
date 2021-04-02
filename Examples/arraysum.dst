@@ -1,4 +1,4 @@
-start {                           
+start {                    
   array <integer, 3> a is [1, 6, 2];
   array <integer, 3> b is [5, 8, 3];
   integer i is 0;

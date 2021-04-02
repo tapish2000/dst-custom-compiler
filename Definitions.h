@@ -59,6 +59,9 @@
 #define astFloatConst 551
 #define astId 552
 #define astArrayType 553
+#define astNot 554
+#define astAddExpr 555
+#define astMultiExpr 556
 
 union Value{
   int ivalue;

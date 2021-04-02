@@ -10,7 +10,7 @@ void default_value(int type);
 
 struct Ast_node* astroot;
 char* name;
-int type, size, no_elements, no_of_params;
+int type, size, no_elements, no_of_params, error_code = 0;
 char tag;
 struct Symbol* sym;
 struct Symbol *currmethod;
@@ -43,8 +43,8 @@ struct Symbol *curMethod = NULL;
 %type <node> program functions function function_name data_type params param_list param
 %type <node> stmts_list stmt withSemcol withoutSemcol
 %type <node> array_decl return_stmt func_call func_type
-%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
-%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
+%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean not_cond or_cond and_cond xor_cond rel_op
+%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list add_expr multi_expr add_op multi_op
 %type <node> data constant arr value
 
 %%
@@ -204,17 +204,46 @@ else_stmt:                        ELSE '{' stmts_list '}'
                                     $$ = NULL;
                                   };
 
-conditions:                       boolean 
+conditions:                       not_cond 
                                   {
                                     $$ = $1;
-                                  }
-                                  | boolean bi_logic_cond conditions 
+                                  };
+                                 
+not_cond:                         NOT or_cond
                                   {
-                                    $$ = makeNode(astConditions, NULL, $1, $2, $3, NULL);
+                                    $$ = makeNode(astNot, NULL, $2, NULL, NULL, NULL);
                                   }
-                                  | NOT conditions 
+                                  |
+                                  or_cond
                                   {
-                                    $$ = makeNode(astConditions, NULL, $2, NULL, NULL, NULL);
+                                    $$ = $1;
+                                  };
+
+or_cond:                          or_cond OR and_cond
+                                  {
+                                    $$ = makeNode(astOr, NULL, $1, $3, NULL, NULL);
+                                  }
+                                  | and_cond
+                                  {
+                                    $$ = $1;
+                                  };
+
+and_cond:                         and_cond AND xor_cond
+                                  {
+                                    $$ = makeNode(astAnd, NULL, $1, $3, NULL, NULL);
+                                  }
+                                  | xor_cond
+                                  {
+                                    $$ = $1;
+                                  };
+
+xor_cond:                          xor_cond XOR boolean
+                                  {
+                                    $$ = makeNode(astXor, NULL, $1, $3, NULL, NULL);
+                                  }
+                                  | boolean
+                                  {
+                                    $$ = $1;
                                   };
 
 boolean:                          boolean  rel_op  expr 
@@ -259,6 +288,12 @@ func_call:                        func_type '(' args_list ')'
 func_type:                        FUNC_ID 
                                   {
                                     $$ = makeNode(astCustomFunc, NULL, NULL, NULL, NULL, NULL);
+                                    sym = NULL;
+                                    sym = find_method($1);
+                                    if(sym==NULL) {
+                                      printf("Error! Function %s is not declared\n", $1);
+                                      error_code = 1;
+                                    }
                                   }
                                   | SHOW 
                                   {
@@ -318,14 +353,50 @@ assignment:                       ASSIGN expr
                                     $$ = makeNode(astAssignment, NULL, $2, NULL, NULL, NULL);
                                   };
 
-expr:                             expr op value 
-                                  {
-                                    $$ = makeNode(astExpr, NULL, $1, $2, $3, NULL);
-                                  }
-                                  | value
+expr:                             add_expr
                                   {
                                     $$ = $1;
                                   };
+
+add_expr:                         add_expr add_op multi_expr
+                                  {
+                                    $$ = makeNode(astAddExpr, NULL, $1, $2, $3, NULL);
+                                  }
+                                  | multi_expr
+                                  {
+                                    $$ = $1;
+                                  };
+
+multi_expr:                       multi_expr multi_op value
+                                  {
+                                    $$ = makeNode(astMultiExpr, NULL, $1, $2, $3, NULL);
+                                  }
+                                  | value 
+                                  {
+                                    $$ = $1;
+                                  } 
+                                  | '(' expr ')'
+                                  {
+                                    $$ = $2;
+                                  };
+
+add_op:                           ADD 
+                                  {
+                                    $$ = makeNode(astAdd, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | SUB 
+                                  {
+                                    $$ = makeNode(astSub, NULL, NULL, NULL, NULL, NULL);
+                                  };
+
+multi_op:                         MUL 
+                                  {
+                                    $$ = makeNode(astMul, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | DIV
+                                  {
+                                    $$ = makeNode(astDiv, NULL, NULL, NULL, NULL, NULL);
+                                  }; 
 
 value:                            func_call 
                                   {
@@ -350,7 +421,8 @@ arr:                              arr '[' data ']'
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
-                                      printf("Error! Variable is not declared\n");
+                                      printf("Error! Variable %s is not declared\n", $1);
+                                      error_code = 1;
                                     }
                                   }; 
 
@@ -367,7 +439,8 @@ data:                             INT_CONST
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
-                                      printf("Error! Variable is not declared\n");
+                                      printf("Error! Variable %s is not declared\n", $1);
+                                      error_code = 1;
                                     }
                                   }; 
 
@@ -404,23 +477,6 @@ data_type:                        INT
                                     size = 0;
                                   };
 
-op:                               ADD 
-                                  {
-                                    $$ = makeNode(astAdd, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | SUB 
-                                  {
-                                    $$ = makeNode(astSub, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | MUL 
-                                  {
-                                    $$ = makeNode(astMul, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | DIV
-                                  {
-                                    $$ = makeNode(astDiv, NULL, NULL, NULL, NULL, NULL);
-                                  }; 
-
 rel_op:                           LTE 
                                   {
                                     $$ = makeNode(astLte, NULL, NULL, NULL, NULL, NULL);
@@ -444,19 +500,6 @@ rel_op:                           LTE
                                   | NEQ
                                   {
                                     $$ = makeNode(astNeq, NULL, NULL, NULL, NULL, NULL);
-                                  };
-
-bi_logic_cond:                    AND 
-                                  {
-                                    $$ = makeNode(astAnd, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | OR 
-                                  {
-                                    $$ = makeNode(astOr, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | XOR
-                                  {
-                                    $$ = makeNode(astXor, NULL, NULL, NULL, NULL, NULL);
                                   };
 
 constant:                         INT_CONST 
@@ -499,6 +542,10 @@ int main(int argc, char *argv[])
   Initialize_Tables();
   yyin = fopen(argv[1], "r");
   yyparse();
+
+  if(error_code == 1)
+    exit(1);
+    
   traverse(astroot, -3);
   Print_Tables();
   return 0;
