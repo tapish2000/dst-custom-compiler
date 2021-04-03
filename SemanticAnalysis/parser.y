@@ -17,11 +17,14 @@ struct Symbol *currmethod;
 union Value value;
 
 int enableRetStuck = 1;
-int TopOfWhileStack=-1;
+
+int whileTop=-1;
 struct Symbol *while_stack[30];
-int TopOfRetStack=-1;
-struct Symbol *ret_stack[30];
-int TopOfStack=-1;
+
+int rtop = -1;
+struct Symbol *rs[30];
+
+int vtop = -1;
 struct Symbol *vs[30];
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
@@ -599,42 +602,44 @@ void Print_Tables(){
   }
 }
 
-//Stack
+//Variable stack
 
-void Show_VStack(){
+void ShowVStack(){
 	printf("\n--- VARIABLE STACK ---\n");
-	for (int i=TopOfStack; i>=0; i--){
+	for (int i=vtop; i>=0; i--){
 		printf("%s\n", vs[i]);
 	}
 	printf("--- END ---\n");
 }
 
-void push_vs(struct Symbol *p)
+void pushV(struct Symbol *p)
 {
-   vs[++TopOfStack]=p;
+   vs[++vtop]=p;
 }
 
-struct Symbol *pop_vs()
+struct Symbol *popV()
 {
-   return(vs[TopOfStack--]);
+   return(vs[vtop--]);
 }
 
-void Show_Ret_Stack(){
+//Return Stack
+
+void ShowRStack(){
 	printf("\n--- RETURN STACK ---\n");
-	for (int i=TopOfRetStack; i>=0; i--){
-		printf("%s\n", ret_stack[i]);
+	for (int i=rtop; i>=0; i--){
+		printf("%s\n", rs[i]);
 	}
 	printf("--- END ---\n");
 }
 
-void push_ret(struct Symbol *p)
+void pushR(struct Symbol *p)
 {
-	ret_stack[++TopOfRetStack]=p;
+	rs[++rtop]=p;
 }
 
-struct Symbol *pop_ret()
+struct Symbol *popR()
 {
-	return(ret_stack[TopOfRetStack--]);
+	return(rs[rtop--]);
 }
 
 
@@ -642,13 +647,13 @@ int check_has_return(){
 	
 	struct Symbol *first, *second;
 	
-	first = ret_stack[0];
-	second = ret_stack[1];
+	first = rs[0];
+	second = rs[1];
 	
 	
-	if (TopOfRetStack > 0 && first && second && strcmp(first->name, "start") == 0 && strcmp(second->name, "return") == 0){
-		pop_ret();
-		pop_ret();
+	if (rtop > 0 && first && second && strcmp(first->name, "start") == 0 && strcmp(second->name, "return") == 0){
+		popR();
+		popR();
 		return 1;
 	} else {
 		return 0;
@@ -656,39 +661,37 @@ int check_has_return(){
 	
 }
 
-struct Symbol* peek_while()
-{
-   return while_stack[TopOfWhileStack];
+//While Stack
+
+struct Symbol* top_while() {
+  return while_stack[whileTop];
 }
 
-void push_while(struct Symbol* whileSym)
-{
-   while_stack[++TopOfWhileStack]=whileSym;
+void push_while(struct Symbol* whileSym) {
+  while_stack[++whileTop] = whileSym;
 }
 
-struct Symbol *pop_while()
-{
-	if(TopOfWhileStack<0){
+struct Symbol *pop_while() {
+	if (whileTop<0) {
 		return(NULL);
 	}
-	
+
 	struct Symbol * temp;
-	temp = while_stack[TopOfWhileStack--];
-	while_stack[TopOfWhileStack+1] = NULL;   
+	temp = while_stack[whileTop--];
+	while_stack[whileTop+1] = NULL;   
 	return(temp);
 }
 
-void Init_While_Stack(){
+void Init_While_Stack() {
 	int i;
-	for(i=0; i<30; i++){
+	for(i = 0; i < 30; i++) {
 		while_stack[i] = NULL;
 	}
-	
 }
 
-void Show_While_Stack(){
+void Show_While_Stack() {
 	printf("\n--- WHILE STACK ---\n");
-	for (int i=TopOfWhileStack; i>=0; i--){
+	for (int i = whileTop; i >= 0; i--) {
 		printf("%d\n", while_stack[i]->value);
 	}
 	printf("--- END ---\n");
