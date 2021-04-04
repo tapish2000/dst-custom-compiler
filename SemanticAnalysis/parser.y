@@ -12,7 +12,7 @@ struct Ast_node* astroot;
 char name[20];
 int type, size, no_elements, no_of_params, error_code = 0;
 char tag;
-struct Symbol* sym, s1;
+struct Symbol *sym, *s1;
 struct Symbol *currmethod;
 union Value value;
 
@@ -87,11 +87,13 @@ function:                         function_name '{' stmts_list '}'
 function_name:                    data_type FUNC_ID '(' params ')' 
                                   {
                                     $$ = makeNode(astFunctionName, NULL, $1, $4, NULL, NULL);
-                                    strcpy(name, '_');
+                                    strcpy(name, "_");
                                     strcat(name, $2+1);
 
-                                    for (i=0; i<no_of_params; i++) {
-                                      s1 = pop_vs(); 
+                                    for(int i=0; i<no_of_params; i++) {
+                                      s1 = popV();
+                                      printf("%s\n", s1->name);
+                                      s1->is_param = 1;
                                       switch(s1->type) {
                                         case 0:
                                         case 3:				
@@ -113,11 +115,12 @@ function_name:                    data_type FUNC_ID '(' params ')'
                                           break;
                                       }
                                     }		
-                                    s1 = pop_vs();
+                                    s1 = popV();
                                     default_value(s1->type);
                                     sym = makeSymbol($2, s1->type, &value, s1->size, 'f', 0, no_of_params);
                                     add_method_to_table(sym);		
                                     strcpy(sym->mix_name, name);
+                                    pushV(sym);
                                   };
 
 params:                           param_list 
@@ -306,11 +309,11 @@ return_stmt:                      RET expr
 array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
                                   {
                                     $$ = makeNode(astArrayDecl, NULL, $3, $5, $8, NULL);
-                                    s1 = pop_vs();
+                                    s1 = popV();
                                     default_value(s1->type);
                                     sym = makeSymbol($7, s1->type, &value, s1->size, 'a', 0, 0);
                                     add_variable_to_table(sym);
-                                    push_vs(sym);
+                                    pushV(sym);
                                   };
 
 array_type:                       data_type 
@@ -386,10 +389,10 @@ param:                            data_type ID
                                   {
                                     $$ = makeNode(astParam, NULL, $1, NULL, NULL, NULL);
                                     default_value(type);
-                                    s1 = pop_vs();
+                                    s1 = popV();
                                     sym = makeSymbol($2, s1->type, &value, s1->size, 'v', 1, 0);
                                     add_variable_to_table(sym);
-                                    push_vs(sym);
+                                    pushV(sym);
                                   };
 
 assignment:                       ASSIGN expr 
@@ -492,7 +495,7 @@ data_type:                        INT
                                   {
                                     $$ = makeNode(astInt, NULL, NULL, NULL, NULL, NULL);
                                     sym = makeSymbol("", 0, &value, 4, 'c', 0, 0);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   }
                                   | BOOL 
                                   {
@@ -504,19 +507,19 @@ data_type:                        INT
                                   {
                                     $$ = makeNode(astStr, NULL, NULL, NULL, NULL, NULL);
                                     sym = makeSymbol("", 2, &value, 0, 'c', 0, 0);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   }
                                   | DOUBLE 
                                   {
                                     $$ = makeNode(astDouble, NULL, NULL, NULL, NULL, NULL);
                                     sym = makeSymbol("", 1, &value, 8, 'c', 0, 0);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   }
                                   | VOID
                                   {
                                     $$ = makeNode(astVoid, NULL, NULL, NULL, NULL, NULL);
                                     sym = makeSymbol("", 4, &value, 0, 'c', 0, 0);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   };
 
 rel_op:                           LTE 
@@ -550,7 +553,7 @@ constant:                         INT_CONST
                                     sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
                                     add_variable_to_table(sym);
                                     $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   }
                                   | SUB INT_CONST 
                                   {
@@ -558,7 +561,7 @@ constant:                         INT_CONST
                                     sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
                                     add_variable_to_table(sym);
                                     $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   }
                                   | STR_CONST 
                                   {
@@ -573,7 +576,7 @@ constant:                         INT_CONST
                                     sym = makeSymbol("intConst", 3, &value, 4, 'c', 1, 0);
                                     add_variable_to_table(sym);
                                     $$ = makeNode(astBoolConst, sym, NULL, NULL, NULL, NULL);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   }
                                   | FLOAT_CONST
                                   {
@@ -581,7 +584,7 @@ constant:                         INT_CONST
                                     sym = makeSymbol("doubleConst", 1, &value, 8, 'c', 1, 0);
                                     add_variable_to_table(sym);
                                     $$ = makeNode(astFloatConst, sym, NULL, NULL, NULL, NULL);
-                                    //push_vs(sym);       
+                                    pushV(sym);       
                                   }
                                   | SUB FLOAT_CONST
                                   {
@@ -589,7 +592,7 @@ constant:                         INT_CONST
                                     sym = makeSymbol("doubleConst", 1, &value, 8, 'c', 1, 0);
                                     add_variable_to_table(sym);
                                     $$ = makeNode(astFloatConst, sym, NULL, NULL, NULL, NULL);
-                                    //push_vs(sym);
+                                    pushV(sym);
                                   };
 
 %%

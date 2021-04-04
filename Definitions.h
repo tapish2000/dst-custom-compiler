@@ -119,3 +119,7 @@ struct Symbol *find_variable(char *s);
 void add_method(struct Symbol *symbp);
 struct Symbol *find_method(char *s);
 void traverse(struct Ast_node* p, int n);
+
+void pushV(struct Symbol *p);
+struct Symbol* popV();
+void ShowVStack();
