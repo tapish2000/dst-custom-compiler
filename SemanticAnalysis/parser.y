@@ -16,6 +16,17 @@ struct Symbol* sym, s1;
 struct Symbol *currmethod;
 union Value value;
 
+int enableRetStuck = 1;
+
+int whileTop=-1;
+struct Symbol *while_stack[30];
+
+int rtop = -1;
+struct Symbol *rs[30];
+
+int vtop = -1;
+struct Symbol *vs[30];
+
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
 
@@ -688,6 +699,102 @@ void Print_Tables(){
   }
 }
 
+//Variable stack
+
+void ShowVStack(){
+	printf("\n--- VARIABLE STACK ---\n");
+	for (int i=vtop; i>=0; i--){
+		printf("%s\n", vs[i]);
+	}
+	printf("--- END ---\n");
+}
+
+void pushV(struct Symbol *p)
+{
+   vs[++vtop]=p;
+}
+
+struct Symbol *popV()
+{
+   return(vs[vtop--]);
+}
+
+//Return Stack
+
+void ShowRStack(){
+	printf("\n--- RETURN STACK ---\n");
+	for (int i=rtop; i>=0; i--){
+		printf("%s\n", rs[i]);
+	}
+	printf("--- END ---\n");
+}
+
+void pushR(struct Symbol *p)
+{
+	rs[++rtop]=p;
+}
+
+struct Symbol *popR()
+{
+	return(rs[rtop--]);
+}
+
+
+int check_has_return(){
+	
+	struct Symbol *first, *second;
+	
+	first = rs[0];
+	second = rs[1];
+	
+	
+	if (rtop > 0 && first && second && strcmp(first->name, "start") == 0 && strcmp(second->name, "return") == 0){
+		popR();
+		popR();
+		return 1;
+	} else {
+		return 0;
+	}
+	
+}
+
+//While Stack
+
+struct Symbol* top_while() {
+  return while_stack[whileTop];
+}
+
+void push_while(struct Symbol* whileSym) {
+  while_stack[++whileTop] = whileSym;
+}
+
+struct Symbol *pop_while() {
+	if (whileTop<0) {
+		return(NULL);
+	}
+
+	struct Symbol * temp;
+	temp = while_stack[whileTop--];
+	while_stack[whileTop+1] = NULL;   
+	return(temp);
+}
+
+void Init_While_Stack() {
+	int i;
+	for(i = 0; i < 30; i++) {
+		while_stack[i] = NULL;
+	}
+}
+
+void Show_While_Stack() {
+	printf("\n--- WHILE STACK ---\n");
+	for (int i = whileTop; i >= 0; i--) {
+		printf("%d\n", while_stack[i]->value);
+	}
+	printf("--- END ---\n");
+}
+
+//Syntax
 
 struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth){
   struct Ast_node * ptr = (struct Ast_node *)malloc(sizeof(struct Ast_node));
