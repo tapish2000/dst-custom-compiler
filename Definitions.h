@@ -5,6 +5,7 @@
 #define NAME_LEN 100
 #define SYM_TABLE_SIZE 40
 
+#define astEmptyProgram 499
 #define astProgram 500
 #define astFunctions 501
 #define astFunction 502
@@ -59,9 +60,10 @@
 #define astFloatConst 551
 #define astId 552
 #define astArrayType 553
-#define astNot 554
-#define astAddExpr 555
-#define astMultiExpr 556
+#define astArrayAssignStmt 554
+#define astElifStmt 555
+#define astNotConditions 556
+
 
 union Value{
   int ivalue;
@@ -72,7 +74,7 @@ union Value{
 struct Symbol {
   char name[NAME_LEN];                /* Variable Name */
   char func_name[NAME_LEN];           /* Function Name */
-  char mix_name[NAME_LEN];        /* Mix Name */
+  char asm_name[NAME_LEN];            /* Mix Name */
   /*char* name;
   char* func_name;*/
   int type;                           /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/

@@ -10,9 +10,9 @@ void default_value(int type);
 
 struct Ast_node* astroot;
 char name[20];
-int type, size, no_elements, no_of_params, error_code = 0;
+int type, size, no_elements, no_of_params, no_of_args, error_code = 0;
 char tag;
-struct Symbol *sym, *s1;
+struct Symbol *sym, *s1, *s2;
 struct Symbol *currmethod;
 union Value value;
 
@@ -54,8 +54,8 @@ struct Symbol *curMethod = NULL;
 %type <node> program functions function function_name data_type params param_list param
 %type <node> stmts_list stmt withSemcol withoutSemcol
 %type <node> array_decl return_stmt func_call func_type
-%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean not_cond or_cond and_cond xor_cond rel_op
-%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list add_expr multi_expr add_op multi_op
+%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
+%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
 %type <node> data constant arr value
 
 %%
@@ -63,8 +63,8 @@ program:                          functions START '{' stmts_list '}'
                                   {
                                     default_value(type);
                                     sym = makeSymbol("main",4,&value,0,'f',0,0);
-                                    strcpy(sym->mix_name, "_source_main");
-                                    add_variable_to_table(sym);
+                                    strcpy(sym->asm_name, "_source_main");
+                                    add_method_to_table(sym);
                                     astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
                                   }
                                   ;
@@ -81,7 +81,6 @@ functions:                        functions function
 function:                         function_name '{' stmts_list '}' 
                                   {
                                     $$ = makeNode(astFunction, NULL, $1, $3, NULL, NULL);
-
                                   };
 
 function_name:                    data_type FUNC_ID '(' params ')' 
@@ -92,21 +91,20 @@ function_name:                    data_type FUNC_ID '(' params ')'
 
                                     for(int i=0; i<no_of_params; i++) {
                                       s1 = popV();
-                                      printf("%s\n", s1->name);
                                       s1->is_param = 1;
                                       switch(s1->type) {
                                         case 0:
                                         case 3:				
-                                          if (s1->tag=='v') {
+                                          if(s1->tag=='v') {
                                             strcat(name, "_int");						
-                                          } else {
+                                          } else if(s1->tag=='a') {
                                             strcat(name, "_intArr");
                                           }						
                                         break;
                                         case 1:				
-                                          if (s1->tag=='v') {
+                                          if(s1->tag=='v') {
                                             strcat(name, "_doub");
-                                          } else {
+                                          } else if(s1->tag=='a'){
                                             strcat(name, "_doubArr");
                                           }
                                         break;
@@ -119,8 +117,7 @@ function_name:                    data_type FUNC_ID '(' params ')'
                                     default_value(s1->type);
                                     sym = makeSymbol($2, s1->type, &value, s1->size, 'f', 0, no_of_params);
                                     add_method_to_table(sym);		
-                                    strcpy(sym->mix_name, name);
-                                    pushV(sym);
+                                    strcpy(sym->asm_name, name);
                                   };
 
 params:                           param_list 
@@ -203,11 +200,19 @@ withoutSemcol:                    loop
 assign_stmt:                      param assignment 
                                   {
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
+                                    popV();
+                                    popV();
                                     // sym = find_variable(param->)
                                   }
                                   | arr assignment
                                   {
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
+                                    s1 = popV();
+                                    s2 = popV();
+                                    if(s1->type == 4 || s2->type == 4) {
+                                      printf("Error! No assignment for void types\n");
+                                      error_code = 1;
+                                    }
                                   };
 
 loop:                             LOOP '(' conditions ')' '{' stmts_list '}'
@@ -247,51 +252,70 @@ else_stmt:                        ELSE '{' stmts_list '}'
                                     $$ = NULL;
                                   };
 
-conditions:                       not_cond 
+conditions:                       boolean 
                                   {
                                     $$ = $1;
-                                  };
-                                 
-not_cond:                         NOT or_cond
-                                  {
-                                    $$ = makeNode(astNot, NULL, $2, NULL, NULL, NULL);
+                                    s1 = popV();
+                                    if(s1->type == 2 || s1->type == 4) {
+                                      printf("Error! Type of %s not compatible for boolean operations\n", s1->name);
+                                      error_code = 1;
+                                    }
                                   }
-                                  |
-                                  or_cond
+                                  | boolean bi_logic_cond conditions 
                                   {
-                                    $$ = $1;
-                                  };
-
-or_cond:                          or_cond OR and_cond
-                                  {
-                                    $$ = makeNode(astOr, NULL, $1, $3, NULL, NULL);
+                                    $$ = makeNode(astConditions, NULL, $1, $2, $3, NULL);
+                                    s1 = popV();
+                                    s2 = popV();
+                                    if(s1->type == 2 || s1->type == 4) {
+                                      type = 4;
+                                      size = 0;
+                                      printf("Error! Type of %s not compatible for arithmetic operations\n", s1->name);
+                                      error_code = 1;
+                                    }
+                                    else if(s2->type == 2 || s2->type == 4) {
+                                      type = 4;
+                                      size = 0;
+                                      printf("Error! Type of %s not compatible for arithmetic operations\n", s2->name);
+                                      error_code = 1;
+                                    }
+                                    else {
+                                      type = 0;
+                                      size = 4;
+                                    }
+                                    pushV(makeSymbol("", type, &value, size, 'c', 0, 0));
                                   }
-                                  | and_cond
+                                  | NOT conditions 
                                   {
-                                    $$ = $1;
-                                  };
-
-and_cond:                         and_cond AND xor_cond
-                                  {
-                                    $$ = makeNode(astAnd, NULL, $1, $3, NULL, NULL);
-                                  }
-                                  | xor_cond
-                                  {
-                                    $$ = $1;
-                                  };
-
-xor_cond:                          xor_cond XOR boolean
-                                  {
-                                    $$ = makeNode(astXor, NULL, $1, $3, NULL, NULL);
-                                  }
-                                  | boolean
-                                  {
-                                    $$ = $1;
+                                    $$ = makeNode(astNotConditions, NULL, $2, NULL, NULL, NULL);
+                                    s1 = popV();
+                                    if(s1->type == 2 || s1->type == 4) {
+                                      printf("Error! Type of %s not compatible for boolean operations\n", s1->name);
+                                      error_code = 1;
+                                    }
                                   };
 
 boolean:                          boolean  rel_op  expr 
                                   {
                                     $$ = makeNode(astBoolean, NULL, $1, $2, $3, NULL);
+                                    s1 = popV();
+                                    s2 = popV();
+                                    if(s1->type == 2 || s1->type == 4) {
+                                      type = 4;
+                                      size = 0;
+                                      printf("Error! Type of %s not compatible for arithmetic operations\n", s1->name);
+                                      error_code = 1;
+                                    }
+                                    else if(s2->type == 2 || s2->type == 4) {
+                                      type = 4;
+                                      size = 0;
+                                      printf("Error! Type of %s not compatible for arithmetic operations\n", s2->name);
+                                      error_code = 1;
+                                    }
+                                    else {
+                                      type = 0;
+                                      size = 4;
+                                    }
+                                    pushV(makeSymbol("", type, &value, size, 'c', 0, 0));
                                   }
                                   | expr 
                                   {
@@ -304,6 +328,7 @@ return_stmt:                      RET expr
                                     /* Check if the type of currmethod and the return type (pop from stack) are same */
 
                                     $$ = makeNode(astReturnStmt, currmethod, $2, NULL, NULL, NULL);
+                                    popV();
                                   };
 
 array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
@@ -328,6 +353,58 @@ array_type:                       data_type
 func_call:                        func_type '(' args_list ')' 
                                   {
                                     $$ = makeNode(astFuncCall, NULL, $1, $3, NULL, NULL);
+                                    s1 = vs[vtop-no_of_args];
+                                    if(strcmp(s1->func_name, "take")!=0 && strcmp(s1->func_name, "show")!=0 && s1!=NULL) {
+                                      if(no_of_args != s1->no_of_params) {
+                                        printf("The function %s expects %d parameters but got %d arguments\n",s1->func_name, s1->no_of_params, no_of_args);
+                                        error_code = 1;
+                                        type = 4;
+                                        size = 0;
+                                      }
+                                      else {
+                                        strcpy(name, "_");
+                                        strcat(name, (s1->func_name)+1);
+                                        for(int i=0; i<no_of_args; i++) {
+                                          s2 = popV();
+                                          switch(s2->type) {
+                                          case 0:
+                                          case 3:		
+                                            if (s1->tag=='a') {
+                                              strcat(name, "_intArr");
+                                            } else {
+                                              strcat(name, "_int");						
+                                            } 	
+                                          break;
+                                          case 1:				
+                                            if (s1->tag=='a') {
+                                              strcat(name, "_doubArr");
+                                            } else {
+                                              strcat(name, "_doub");
+                                            }
+                                          break;
+                                          case 2:
+                                            strcat(name, "_intArr");
+                                            break;
+                                          }
+                                        }
+                                        s1 = popV();
+                                        printf("%s %s\n",s1->asm_name, name);
+                                        if(strcmp(s1->asm_name, name) != 0) {
+                                          printf("The arguments of function %s are not matching with the function's parameter types\n", s1->name);
+                                          error_code = 1;
+                                          type = 4;
+                                          size = 0;
+                                        } else {
+                                        type = s1->type;
+                                        size = s1->size;
+                                        } }
+                                      sym = makeSymbol("", type, &value, size, s1->tag, 0, 0);
+                                      pushV(sym);
+                                    }
+                                    else {
+                                      for(int i=0; i<=no_of_args; i++)
+                                        popV();
+                                    }
                                   };
 
 func_type:                        FUNC_ID 
@@ -339,14 +416,21 @@ func_type:                        FUNC_ID
                                       printf("Error! Function %s is not declared\n", $1);
                                       error_code = 1;
                                     }
+                                    pushV(sym);
                                   }
                                   | SHOW 
                                   {
                                     $$ = makeNode(astFuncShow, NULL, NULL, NULL, NULL, NULL);
+                                    default_value(0);
+                                    sym = makeSymbol("show",4,&value,0,'f',0,0);
+                                    pushV(sym);
                                   }
                                   | TAKE
                                   {
                                     $$ = makeNode(astFuncTake, NULL, NULL, NULL, NULL, NULL);
+                                    default_value(0);
+                                    sym = makeSymbol("take",4,&value,0,'f',0,0);
+                                    pushV(sym);
                                   };
 
 args_list:                        args 
@@ -356,15 +440,18 @@ args_list:                        args
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
+                                    no_of_args = 0;
                                   };
 
 args:                             args ',' expr 
                                   {
                                     $$ = makeNode(astArgs, NULL, $1, $3, NULL, NULL);
+                                    no_of_args = no_of_args + 1;
                                   }
                                   | expr 
                                   {
                                     $$ = $1;
+                                    no_of_args = 1;
                                   };
 
 array_assign:                     ASSIGN '[' id_list ']'
@@ -400,50 +487,50 @@ assignment:                       ASSIGN expr
                                     $$ = makeNode(astAssignment, NULL, $2, NULL, NULL, NULL);
                                   };
 
-expr:                             add_expr
+expr:                             expr op value 
                                   {
+                                    printf("expr1\n");
+                                    $$ = makeNode(astExpr, NULL, $1, $2, $3, NULL);
+                                    s1 = popV();
+                                    s2 = popV();
+                                    if(s1->type == 2|| s1->type == 4) {
+                                      type = (s1->type == 2) ? 2 : 4;
+                                      size = 0;
+                                      printf("Error! Type of %s not compatible for arithmetic operations\n", s1->name);
+                                      error_code = 1;
+                                    }
+                                    else if(s2->type == 2 || s2->type == 4) {
+                                      type = (s2->type == 2) ? 2 : 4;
+                                      size = 0;
+                                      printf("Error! Type of %s not compatible for arithmetic operations\n", s2->name);
+                                      error_code = 1;
+                                    }
+                                    else {
+                                    switch (s1->type) {
+                                      case 3:
+                                      case 0:
+                                        if (s2->type == 0){
+                                          type = 0;
+                                          size = 4;
+                                        } else if (s2->type == 1){
+                                          type = 1;
+                                          size = 8;
+                                        }
+                                      break;
+                                      case 1:
+                                        type = 1;
+                                        size = 8;
+                                      break;
+                                      } 
+                                    }
+                                    sym = makeSymbol("", type, &value, size, 'c', 0, 0);
+                                    pushV(sym);
+                                  }
+                                  | value
+                                  {
+                                    printf("expr2\n");
                                     $$ = $1;
                                   };
-
-add_expr:                         add_expr add_op multi_expr
-                                  {
-                                    $$ = makeNode(astAddExpr, NULL, $1, $2, $3, NULL);
-                                  }
-                                  | multi_expr
-                                  {
-                                    $$ = $1;
-                                  };
-
-multi_expr:                       multi_expr multi_op value
-                                  {
-                                    $$ = makeNode(astMultiExpr, NULL, $1, $2, $3, NULL);
-                                  }
-                                  | value 
-                                  {
-                                    $$ = $1;
-                                  } 
-                                  | '(' expr ')'
-                                  {
-                                    $$ = $2;
-                                  };
-
-add_op:                           ADD 
-                                  {
-                                    $$ = makeNode(astAdd, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | SUB 
-                                  {
-                                    $$ = makeNode(astSub, NULL, NULL, NULL, NULL, NULL);
-                                  };
-
-multi_op:                         MUL 
-                                  {
-                                    $$ = makeNode(astMul, NULL, NULL, NULL, NULL, NULL);
-                                  }
-                                  | DIV
-                                  {
-                                    $$ = makeNode(astDiv, NULL, NULL, NULL, NULL, NULL);
-                                  }; 
 
 value:                            func_call 
                                   {
@@ -471,6 +558,9 @@ arr:                              arr '[' data ']'
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
+                                    else {
+                                      pushV(sym);
+                                    }
                                   }; 
 
 data:                             INT_CONST 
@@ -494,33 +584,51 @@ data:                             INT_CONST
 data_type:                        INT 
                                   {
                                     $$ = makeNode(astInt, NULL, NULL, NULL, NULL, NULL);
-                                    sym = makeSymbol("", 0, &value, 4, 'c', 0, 0);
+                                    sym = makeSymbol("int", 0, &value, 4, 'c', 0, 0); //remove name
                                     pushV(sym);
                                   }
                                   | BOOL 
                                   {
                                     $$ = makeNode(astBool, NULL, NULL, NULL, NULL, NULL);
-                                    sym = makeSymbol("", 3, &value, 1, 'c', 0, 0);
-                                    //push_vs(sym);
+                                    sym = makeSymbol("bool", 3, &value, 1, 'c', 0, 0);
+                                    pushV(sym);
                                   }
                                   | STR 
                                   {
                                     $$ = makeNode(astStr, NULL, NULL, NULL, NULL, NULL);
-                                    sym = makeSymbol("", 2, &value, 0, 'c', 0, 0);
+                                    sym = makeSymbol("str", 2, &value, 0, 'c', 0, 0);
                                     pushV(sym);
                                   }
                                   | DOUBLE 
                                   {
                                     $$ = makeNode(astDouble, NULL, NULL, NULL, NULL, NULL);
-                                    sym = makeSymbol("", 1, &value, 8, 'c', 0, 0);
+                                    sym = makeSymbol("dou", 1, &value, 8, 'c', 0, 0);
                                     pushV(sym);
                                   }
                                   | VOID
                                   {
                                     $$ = makeNode(astVoid, NULL, NULL, NULL, NULL, NULL);
-                                    sym = makeSymbol("", 4, &value, 0, 'c', 0, 0);
+                                    sym = makeSymbol("void", 4, &value, 0, 'c', 0, 0);
                                     pushV(sym);
                                   };
+
+
+op:                               ADD 
+                                  {
+                                    $$ = makeNode(astAdd, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | SUB 
+                                  {
+                                    $$ = makeNode(astSub, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | MUL 
+                                  {
+                                    $$ = makeNode(astMul, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | DIV
+                                  {
+                                    $$ = makeNode(astDiv, NULL, NULL, NULL, NULL, NULL);
+                                  }; 
 
 rel_op:                           LTE 
                                   {
@@ -545,6 +653,19 @@ rel_op:                           LTE
                                   | NEQ
                                   {
                                     $$ = makeNode(astNeq, NULL, NULL, NULL, NULL, NULL);
+                                  };
+
+bi_logic_cond:                    AND 
+                                  {
+                                    $$ = makeNode(astAnd, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | OR 
+                                  {
+                                    $$ = makeNode(astOr, NULL, NULL, NULL, NULL, NULL);
+                                  }
+                                  | XOR
+                                  {
+                                    $$ = makeNode(astXor, NULL, NULL, NULL, NULL, NULL);
                                   };
 
 constant:                         INT_CONST 
@@ -611,6 +732,7 @@ int main(int argc, char *argv[])
     exit(1);
     
   traverse(astroot, -3);
+  ShowVStack();
   Print_Tables();
   return 0;
 }
@@ -707,7 +829,7 @@ void Print_Tables(){
 void ShowVStack(){
 	printf("\n--- VARIABLE STACK ---\n");
 	for (int i=vtop; i>=0; i--){
-		printf("%s\n", vs[i]);
+		printf("%s %s %d %d\n", vs[i]->name, vs[i]->func_name, vs[i]->type, vtop);
 	}
 	printf("--- END ---\n");
 }
@@ -715,10 +837,14 @@ void ShowVStack(){
 void pushV(struct Symbol *p)
 {
    vs[++vtop]=p;
+   printf("\nPush\n");
+   ShowVStack();
 }
 
 struct Symbol *popV()
-{
+{ 
+   printf("\nPop\n");
+   ShowVStack();
    return(vs[vtop--]);
 }
 
@@ -870,14 +996,14 @@ void add_method_to_table(struct Symbol *symbp)
 
   newme=symbp;
    
-	exists=find_method(newme->name);
+	exists=find_method(newme->func_name);
 	if( !exists )
 	{
 		add_method(newme);
   }
   else
   {
-      printf("%s redeclaration.\n",newme->name);
+      printf("%s redeclaration.\n",newme->func_name);
       exit(1);
   }
   currmethod = symbp;
