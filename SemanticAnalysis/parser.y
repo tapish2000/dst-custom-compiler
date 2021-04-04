@@ -9,10 +9,10 @@ int yylex();
 void default_value(int type);
 
 struct Ast_node* astroot;
-char* name;
+char name[20];
 int type, size, no_elements, no_of_params, error_code = 0;
 char tag;
-struct Symbol* sym;
+struct Symbol* sym, s1;
 struct Symbol *currmethod;
 union Value value;
 
@@ -50,10 +50,11 @@ struct Symbol *curMethod = NULL;
 %%
 program:                          functions START '{' stmts_list '}'
                                   {
-                                    astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
-
-                                    sym = makeSymbol("start",'5',NULL,0,1,'v',0,0);
+                                    default_value(type);
+                                    sym = makeSymbol("main",4,&value,0,'f',0,0);
+                                    strcpy(sym->mix_name, "_source_main");
                                     add_variable_to_table(sym);
+                                    astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
                                   }
                                   ;
 
@@ -75,9 +76,37 @@ function:                         function_name '{' stmts_list '}'
 function_name:                    data_type FUNC_ID '(' params ')' 
                                   {
                                     $$ = makeNode(astFunctionName, NULL, $1, $4, NULL, NULL);
-                                    default_value(type);
-                                    sym = makeSymbol($2, type, &value, 0, 0, 'f', 0, no_of_params);
-                                    add_method_to_table(sym);
+                                    strcpy(name, '_');
+                                    strcat(name, $2+1);
+
+                                    for (i=0; i<no_of_params; i++) {
+                                      s1 = pop_vs(); 
+                                      switch(s1->type) {
+                                        case 0:
+                                        case 3:				
+                                          if (s1->tag=='v') {
+                                            strcat(name, "_int");						
+                                          } else {
+                                            strcat(name, "_intArr");
+                                          }						
+                                        break;
+                                        case 1:				
+                                          if (s1->tag=='v') {
+                                            strcat(name, "_doub");
+                                          } else {
+                                            strcat(name, "_doubArr");
+                                          }
+                                        break;
+                                        case 2:
+                                          strcat(name, "_intArr");
+                                          break;
+                                      }
+                                    }		
+                                    s1 = pop_vs();
+                                    default_value(s1->type);
+                                    sym = makeSymbol($2, s1->type, &value, s1->size, 'f', 0, no_of_params);
+                                    add_method_to_table(sym);		
+                                    strcpy(sym->mix_name, name);
                                   };
 
 params:                           param_list 
@@ -95,7 +124,7 @@ param_list:                       param_list ',' param
                                     $$ = makeNode(astParamList, NULL, $1, $3, NULL, NULL);
                                     no_of_params++;
                                   }
-                                  | param 
+                                  | param
                                   {
                                     $$ = $1;
                                     no_of_params=1;
@@ -266,9 +295,11 @@ return_stmt:                      RET expr
 array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
                                   {
                                     $$ = makeNode(astArrayDecl, NULL, $3, $5, $8, NULL);
-                                    default_value(type);
-                                    sym = makeSymbol($7, type, &value, 0, size, 'a', 0, 0);
+                                    s1 = pop_vs();
+                                    default_value(s1->type);
+                                    sym = makeSymbol($7, s1->type, &value, s1->size, 'a', 0, 0);
                                     add_variable_to_table(sym);
+                                    push_vs(sym);
                                   };
 
 array_type:                       data_type 
@@ -344,8 +375,10 @@ param:                            data_type ID
                                   {
                                     $$ = makeNode(astParam, NULL, $1, NULL, NULL, NULL);
                                     default_value(type);
-                                    sym = makeSymbol($2, type, &value, 0, size, 'v', 1, 0);
+                                    s1 = pop_vs();
+                                    sym = makeSymbol($2, s1->type, &value, s1->size, 'v', 1, 0);
                                     add_variable_to_table(sym);
+                                    push_vs(sym);
                                   };
 
 assignment:                       ASSIGN expr 
@@ -430,7 +463,7 @@ data:                             INT_CONST
                                   {
                                     $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
-                                    sym = makeSymbol("INT_CONST", 0, &value, 0, size, 'c', 1, 0);
+                                    sym = makeSymbol("INT_CONST", 0, &value, 4, 'c', 1, 0);
                                   }
                                   | ID
                                   {
@@ -447,34 +480,32 @@ data:                             INT_CONST
 data_type:                        INT 
                                   {
                                     $$ = makeNode(astInt, NULL, NULL, NULL, NULL, NULL);
-                                    type = 0;
-                                    size = 4;
+                                    sym = makeSymbol("", 0, &value, 4, 'c', 0, 0);
+                                    //push_vs(sym);
                                   }
                                   | BOOL 
                                   {
                                     $$ = makeNode(astBool, NULL, NULL, NULL, NULL, NULL);
-                                    type = 3;
-                                    size = 1;
+                                    sym = makeSymbol("", 3, &value, 1, 'c', 0, 0);
+                                    //push_vs(sym);
                                   }
                                   | STR 
                                   {
                                     $$ = makeNode(astStr, NULL, NULL, NULL, NULL, NULL);
-                                    printf("Hey str\n");
-                                    type = 2;
-                                    size = 0;
-                                    printf("Hey str\n");
+                                    sym = makeSymbol("", 2, &value, 0, 'c', 0, 0);
+                                    //push_vs(sym);
                                   }
                                   | DOUBLE 
                                   {
                                     $$ = makeNode(astDouble, NULL, NULL, NULL, NULL, NULL);
-                                    type = 1;
-                                    size = 8;
+                                    sym = makeSymbol("", 1, &value, 8, 'c', 0, 0);
+                                    //push_vs(sym);
                                   }
                                   | VOID
                                   {
                                     $$ = makeNode(astVoid, NULL, NULL, NULL, NULL, NULL);
-                                    type = 4;
-                                    size = 0;
+                                    sym = makeSymbol("", 4, &value, 0, 'c', 0, 0);
+                                    //push_vs(sym);
                                   };
 
 rel_op:                           LTE 
@@ -504,31 +535,50 @@ rel_op:                           LTE
 
 constant:                         INT_CONST 
                                   {
-                                    $$ = makeNode(astIntConst, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
-                                    sym = makeSymbol("intConst", 0, &value, 0, size, 'c', 1, 0);
+                                    sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
                                     add_variable_to_table(sym);
+                                    $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
+                                    //push_vs(sym);
+                                  }
+                                  | SUB INT_CONST 
+                                  {
+                                    value.ivalue = -$2;
+                                    sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
+                                    add_variable_to_table(sym);
+                                    $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
+                                    //push_vs(sym);
                                   }
                                   | STR_CONST 
                                   {
-                                    $$ = makeNode(astStrConst, NULL, NULL, NULL, NULL, NULL);
                                     strcpy(value.yvalue, $1);
-                                    sym = makeSymbol("strConst", 2, &value, 0, size, 'c', 1, 0);
+                                    sym = makeSymbol("strConst", 2, &value, 0, 'c', 1, 0);
                                     add_variable_to_table(sym);
+                                    $$ = makeNode(astStrConst, sym, NULL, NULL, NULL, NULL);
                                   }
                                   | BOOL_CONST 
                                   {
-                                    $$ = makeNode(astBoolConst, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
-                                    sym = makeSymbol("boolConst", 3, &value, 0, size, 'c', 1, 0);
+                                    sym = makeSymbol("intConst", 3, &value, 4, 'c', 1, 0);
                                     add_variable_to_table(sym);
+                                    $$ = makeNode(astBoolConst, sym, NULL, NULL, NULL, NULL);
+                                    //push_vs(sym);
                                   }
                                   | FLOAT_CONST
                                   {
-                                    $$ = makeNode(astFloatConst, NULL, NULL, NULL, NULL, NULL);
                                     value.dvalue = $1;
-                                    sym = makeSymbol("doubleConst", 1, &value, 0, size, 'c', 1, 0);
+                                    sym = makeSymbol("doubleConst", 1, &value, 8, 'c', 1, 0);
                                     add_variable_to_table(sym);
+                                    $$ = makeNode(astFloatConst, sym, NULL, NULL, NULL, NULL);
+                                    //push_vs(sym);       
+                                  }
+                                  | SUB FLOAT_CONST
+                                  {
+                                    value.dvalue = -$2;
+                                    sym = makeSymbol("doubleConst", 1, &value, 8, 'c', 1, 0);
+                                    add_variable_to_table(sym);
+                                    $$ = makeNode(astFloatConst, sym, NULL, NULL, NULL, NULL);
+                                    //push_vs(sym);
                                   };
 
 %%
@@ -650,12 +700,12 @@ struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, s
   return ptr;
 }
 
-struct Symbol * makeSymbol(char *name, int type, union Value* value, int scope, int size,char tag,int no_elements,int no_of_params){
+struct Symbol * makeSymbol(char *name, int type, union Value* value, int size,char tag,int no_elements,int no_of_params){
   struct Symbol* ptr = (struct Symbol*)malloc(sizeof(struct Symbol));
   ptr->tag = tag;
   if(tag == 'f'){
     strcpy(ptr->func_name, name);
-  }else{
+  } else{
     strcpy(ptr->name, name);
   }
   switch(type) {
@@ -672,7 +722,7 @@ struct Symbol * makeSymbol(char *name, int type, union Value* value, int scope, 
       ptr->value.ivalue = value->ivalue;
   }
   ptr->type = type;
-  ptr->scope = scope;
+  //ptr->scope = scope;
   ptr->size = size;
   ptr->no_elements = no_elements;
   ptr->no_of_params = no_of_params;

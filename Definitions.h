@@ -72,19 +72,20 @@ union Value{
 struct Symbol {
   char name[NAME_LEN];                /* Variable Name */
   char func_name[NAME_LEN];           /* Function Name */
+  char mix_name[NAME_LEN];        /* Mix Name */
   /*char* name;
   char* func_name;*/
-  int type;                           /* Datatype 0-integer, 1-double, 2-string, 3-boolean*/
-  int method_type;                    /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/
-  int scope;                          /* Scope */
+  int type;                           /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/
+  //int method_type;                    /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/
+  //int scope;                          /* Scope */
   union Value value;                  /* Value of the variable */
   int size;                           /* size of the variable */
   char tag;                           /* a-Array, v-Variable, f-Function, c-Constant*/
   int no_elements;                    /*  number of elements for an array, in case of a variable - 1 */
   int no_of_params;                   /* Number of parameters in a function */
-  // int *param_list;                    /* List of parameters of a function */ 
+  char *param_list;                   /* List of parameters of a function */ 
   // int *arr_elements;                  /* Elements in an array */
-
+  int is_param;                       /* 1 - parameter or 0 - not a parameter  */
   struct Hash_Table *symbol_table;     /* Pointer to the symbol table if it is a method */
 
   struct Symbol *next;                /* Pointer to the next symbol in the symbol table */
@@ -108,7 +109,7 @@ void Initialize_Tables();
 void Print_Tables();
 
 struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth);
-struct Symbol * makeSymbol(char *name, int type, union Value* value, int scope, int size,char tag,int no_elements,int no_of_params);
+struct Symbol * makeSymbol(char *name, int type, union Value* value, int size,char tag,int no_elements,int no_of_params);
 
 void add_variable_to_table(struct Symbol *symbp);
 void add_method_to_table(struct Symbol *symbp);
