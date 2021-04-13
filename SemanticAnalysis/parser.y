@@ -54,11 +54,12 @@ struct Symbol *curMethod = NULL;
 program:                          functions START '{' stmts_list '}'
                                   {
                                     printf("program - START\n");
-                                    astroot = makeNode(astProgram, NULL, $1, $4, NULL, NULL);
 
                                     sym = makeSymbol("start", 0, &value, 0, 1, 'f', 0, 0);
                                     strcpy(sym->asm_name, "_source_start");
                                     add_variable_to_table(sym);
+                                    
+                                    astroot = makeNode(astProgram, sym, $1, $4, NULL, NULL);
                                   }
                                   | /* EMPTY */
                                   {

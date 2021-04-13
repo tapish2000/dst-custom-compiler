@@ -22,11 +22,12 @@ void processProgram(struct Ast_node *p, int level) {
 	// printf("astProgram - %d\n", p->child_node[1]->node_type);
 	if (p->child_node[0]) {
 		generateCode(p->child_node[0], level + 1);  // Functions
-
-		// fprintf(asmCode, "%s:\n", p->SymbolNode->MIXname);	// after MIXName gets implemented
-		fprintf(asmCode, "    push ebp\n");
-		fprintf(asmCode, "    mov  ebp, esp\n");
 	}
+
+	printf("processProgram - %s", p->symbol_node->asm_name);
+	fprintf(asmCode, "%s:\n", p->symbol_node->asm_name);
+	fprintf(asmCode, "    push ebp\n");
+	fprintf(asmCode, "    mov  ebp, esp\n");
 
     generateCode(p->child_node[1], level + 1);  // Statements List
 	printf("End\n");
