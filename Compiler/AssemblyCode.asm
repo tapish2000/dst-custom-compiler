@@ -11,6 +11,20 @@ _main:
 
 ; ----------------------- ;
 
+    push ebp
+    mov  ebp, esp
+    mov  esp, ebp
+    pop  ebp
+    mov  esp, ebp
+    pop  ebp
+
+; ----------------------- ;
+
+    push ebp
+    mov  ebp, esp
+
+; ----------------------- ;
+
 _source_start:
     push ebp
     mov  ebp, esp
