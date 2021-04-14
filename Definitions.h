@@ -74,18 +74,19 @@ union Value{
 struct Symbol {
   char name[NAME_LEN];                /* Variable Name */
   char func_name[NAME_LEN];           /* Function Name */
-  char asm_name[NAME_LEN];            /* Mix Name */
+  char asm_name[NAME_LEN];            /* Assembly Instructions Set Name */
   /*char* name;
   char* func_name;*/
   int type;                           /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/
-  //int method_type;                    /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void*/
+  //int method_type;                    /* Datatype 0-integer, 1-double, 2-string, 3-boolean, 4-void */
   //int scope;                          /* Scope */
   union Value value;                  /* Value of the variable */
   int size;                           /* size of the variable */
-  char tag;                           /* a-Array, v-Variable, f-Function, c-Constant*/
+  char tag;                           /* a-Array, v-Variable, f-Function, c-Constant */
   int no_elements;                    /*  number of elements for an array, in case of a variable - 1 */
   int no_of_params;                   /* Number of parameters in a function */
-  char *param_list;                   /* List of parameters of a function */ 
+  char asmclass;                      /* m-Memory, r-Register, c-Constant, s-Stack */
+  // int *param_list;                    /* List of parameters of a function */ 
   // int *arr_elements;                  /* Elements in an array */
   int is_param;                       /* 1 - parameter or 0 - not a parameter  */
   struct Hash_Table *symbol_table;     /* Pointer to the symbol table if it is a method */
@@ -110,6 +111,12 @@ struct Ast_node {
 void Initialize_Tables();
 void Print_Tables();
 
+struct Symbol* top_while();
+void push_while(struct Symbol* whileSym);
+struct Symbol *pop_while();
+void Init_While_Stack();
+void Show_While_Stack();
+
 struct Ast_node* makeNode(int type, struct Symbol *sn, struct Ast_node* first, struct Ast_node* second, struct Ast_node* third, struct Ast_node* fourth);
 struct Symbol * makeSymbol(char *name, int type, union Value* value, int size,char tag,int no_elements,int no_of_params);
 
@@ -122,6 +129,11 @@ void add_method(struct Symbol *symbp);
 struct Symbol *find_method(char *s);
 void traverse(struct Ast_node* p, int n);
 
-void pushV(struct Symbol *p);
-struct Symbol* popV();
+void generateCode(struct Ast_node *p, int level);
+
 void ShowVStack();
+void pushV(struct Symbol *p);
+struct Symbol *popV();
+void ShowRStack();
+void pushR(struct Symbol *p);
+struct Symbol *popR();
