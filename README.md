@@ -2,3 +2,4 @@
 
 - [x] Lexer written
 - [ ] Parser Phase being written
+- [ ] Semantics Phase (asm code conversion)
