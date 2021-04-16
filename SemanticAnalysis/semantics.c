@@ -217,47 +217,92 @@ void processConditional(struct Ast_node *p, int level) {
 	generateCode(p->child_node[0], level + 1);	// Conditions for if condition
 	lhs = pop_while();
 	int temp_ifs = 0;
-	switch (lhs->type){
-		// Integer type
-		case 0:
-			switch (lhs->asmclass){
-				case 'm':
-					num_ifs++;
-					temp_ifs = num_ifs;
-					fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
-					fprintf(asmCode, "    cmp  ecx, 0\n");
-					fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
-					generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-					break;
-				case 'r':
-					num_ifs++;
-					temp_ifs = num_ifs;
-					fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-					fprintf(asmCode, "    cmp  ecx, 0\n");
-					fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
-					generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-					break;
-				case 'c':
-					generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-					break;
-				case 's':
-					printf("\nStack call not possible for if statement\n");
-					break;
-			}
-			break;
-		// Double Type
-		case 1:
-			break;
-		// String Type
-		case 2:
-			break;
-		// Boolean Type
-		case 3:
-			break;
-		default:
-			break;
+	if(!p->child_node[2]) {
+		switch (lhs->type){
+			// Integer type
+			case 0:
+				switch (lhs->asmclass){
+					case 'm':
+						num_ifs++;
+						temp_ifs = num_ifs;
+						fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
+						fprintf(asmCode, "    cmp  ecx, 0\n");
+						fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
+						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
+						break;
+					case 'r':
+						num_ifs++;
+						temp_ifs = num_ifs;
+						fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
+						fprintf(asmCode, "    cmp  ecx, 0\n");
+						fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
+						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
+						break;
+					case 'c':
+						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
+						break;
+					case 's':
+						printf("\nStack call not possible for if statement\n");
+						break;
+				}
+				break;
+			// Double Type
+			case 1:
+				break;
+			// String Type
+			case 2:
+				break;
+			// Boolean Type
+			case 3:
+				break;
+			default:
+				break;
+		}
+	}else{
+		switch (lhs->type){
+			// Integer type
+			case 0:
+				switch (lhs->asmclass){
+					case 'm':
+						num_ifs++;
+						temp_ifs = num_ifs;
+						fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
+						fprintf(asmCode, "    cmp  ecx, 0\n");
+						fprintf(asmCode, "    je   Else%d\n", temp_ifs);
+						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
+						break;
+					case 'r':
+						num_ifs++;
+						temp_ifs = num_ifs;
+						fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
+						fprintf(asmCode, "    cmp  ecx, 0\n");
+						fprintf(asmCode, "    je   Else%d\n", temp_ifs);
+						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
+						break;
+					case 'c':
+						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
+						break;
+					case 's':
+						printf("\nStack call not possible for if statement\n");
+						break;
+				}
+				break;
+			// Double Type
+			case 1:
+				break;
+			// String Type
+			case 2:
+				break;
+			// Boolean Type
+			case 3:
+				break;
+			default:
+				break;
+		}
+		fprintf(asmCode, "    jmp  EndIf%d\n", temp_ifs);
+		fprintf(asmCode, "    Else%d:\n", temp_ifs);
+		generateCode(p->child_node[2], level + 1);	// Remaining Conditions
 	}
-	generateCode(p->child_node[2], level + 1);	// Remaining Conditions
 	fprintf(asmCode, "    EndIf%d:\n", temp_ifs); // Ending the if caluse
 }
 
