@@ -853,14 +853,14 @@ void ShowVStack(){
 void pushV(struct Symbol *p)
 {
    vs[++vtop]=p;
-   printf("\nPush\n");
-   ShowVStack();
+  //  printf("\nPush\n");
+  //  ShowVStack();
 }
 
 struct Symbol *popV()
 { 
-   printf("\nPop\n");
-   ShowVStack();
+  //  printf("\nPop\n");
+  //  ShowVStack();
    return(vs[vtop--]);
 }
 
