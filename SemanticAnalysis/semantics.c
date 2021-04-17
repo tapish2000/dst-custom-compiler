@@ -76,7 +76,10 @@ void processContinue(struct Ast_node *p) {
 } 
 
 void processAssignStmt(struct Ast_node *p, int level) {
+	struct Symbol *lhs,*rhs;
     generateCode(p->child_node[0], level + 1);  // Parameter
+	lhs = popV();
+	// printf("############ %s",lhs->asm_name);
     generateCode(p->child_node[1], level + 1);  // Assignment
 }
 

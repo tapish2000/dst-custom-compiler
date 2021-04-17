@@ -16,8 +16,6 @@ struct Symbol *currmethod;
 union Value value;
 struct Symbol *newsym;
 
-int enableRetStuck = 1;
-
 int whileTop=-1;
 struct Symbol *while_stack[30];
 
