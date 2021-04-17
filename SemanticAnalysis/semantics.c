@@ -250,10 +250,12 @@ void processLoop(struct Ast_node *p, int level) {
 
 void processConditional(struct Ast_node *p, int level) {
 	struct Symbol* lhs;
-	generateCode(p->child_node[0], level + 1);	// Conditions for if condition
-	lhs = pop_while();
+	printf("ConditionalCheck1\n");
+	generateCode(p->child_node[0], level + 1);	// Conditions for if condition or boolean called directly
+	lhs = popV();
+	printf("-- %d %c --\n",lhs->type,lhs->asmclass);
 	int temp_ifs = 0;
-	if(!p->child_node[2]) {
+	if(p->child_node[2]!=NULL) {
 		switch (lhs->type){
 			// Integer type
 			case 0:
