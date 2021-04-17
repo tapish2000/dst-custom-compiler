@@ -6,4 +6,5 @@ l
 p
 myparser
 y.output
-Compiler/
+Compiler/AssemblyCode.asm
+Compiler/AssemblyData.asm

@@ -214,10 +214,12 @@ void processLoop(struct Ast_node *p, int level) {
 
 void processConditional(struct Ast_node *p, int level) {
 	struct Symbol* lhs;
-	generateCode(p->child_node[0], level + 1);	// Conditions for if condition
-	lhs = pop_while();
+	printf("ConditionalCheck1\n");
+	generateCode(p->child_node[0], level + 1);	// Conditions for if condition or boolean called directly
+	lhs = popV();
+	printf("-- %d %c --\n",lhs->type,lhs->asmclass);
 	int temp_ifs = 0;
-	if(!p->child_node[2]) {
+	if(p->child_node[2]!=NULL) {
 		switch (lhs->type){
 			// Integer type
 			case 0:
@@ -327,9 +329,14 @@ void processElseStmt(struct Ast_node *p, int level) {
 } 
 
 void processConditions(struct Ast_node *p, int level) {
+	printf("ConditionsCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Boolean
+	printf("ConditionsCheck2\n");
 	generateCode(p->child_node[1], level + 1);	// Bi-logic Conditions
+	printf("ConditionsCheck3\n");
 	generateCode(p->child_node[2], level + 1);	// Conditions
+	printf("ConditionsCheck4\n");
+	
 }
 
 void processNotConditions(struct Ast_node *p, int level) {
@@ -337,9 +344,14 @@ void processNotConditions(struct Ast_node *p, int level) {
 }
 
 void processBoolean(struct Ast_node *p, int level) {
+	printf("BooleanCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Boolean
+	printf("BooleanCheck2\n");
 	generateCode(p->child_node[1], level + 1);	// Relational Operators
+	printf("BooleanCheck3\n");
 	generateCode(p->child_node[2], level + 1);	// Expression
+	printf("BooleanCheck4\n");
+	
 }
 
 void processReturnStmt(struct Ast_node *p, int level) {
@@ -513,9 +525,13 @@ void processAssignment(struct Ast_node *p, int level) {
 }
 
 void processExpr(struct Ast_node *p, int level) {
+	printf("ExprCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Expression
+	printf("ExprCheck2\n");
 	generateCode(p->child_node[1], level + 1);	// Operator
+	printf("ExprCheck3\n");
 	generateCode(p->child_node[2], level + 1);	// Value
+	printf("ExprCheck4\n");
 }
 
 void processArr(struct Ast_node *p, int level) {
@@ -528,23 +544,34 @@ void processData(struct Ast_node *p) {
 }
 
 void processIntConst(struct Ast_node *p) {
+	p->symbol_node->asmclass = 'c';
+	pushV(p->symbol_node);
 	printf("processIntConst - %d\n", p->node_type);
 	// push_vs(p->symbol_node);
 }
 
 void processStrConst(struct Ast_node *p) {
+	p->symbol_node->asmclass = 'c';
+	pushV(p->symbol_node);
 	// push_vs(p->symbol_node);
 }
 
 void processBoolConst(struct Ast_node *p) {
+	p->symbol_node->asmclass = 'c';
+	pushV(p->symbol_node);
 	// push_vs(p->symbol_node);
 }
 
 void processFloatConst(struct Ast_node *p) {
+	p->symbol_node->asmclass = 'c';
+	pushV(p->symbol_node);
 	// push_vs(p->symbol_node);
 }
 
 void processId(struct Ast_node *p) {
+	p->symbol_node->asmclass = 'r';
+	pushV(p->symbol_node);
+	printf("Checking %d----->\n",p->symbol_node->type);
 	// Not clear what to write here, to be discussed
 }
 
@@ -575,13 +602,13 @@ void enterInitCode() {
 
 /************ Code generation by traversing Tree ***************/
 void generateCode(struct Ast_node *p, int level) {
-
+	printf("Check1:Shubh\n");
 	if (p == NULL) {
 		return;
 	}
-
+	printf("Check2:Shubh\n");
     printf("%d\n", p->node_type);
-
+	printf("Check3:Shubh\n");
     switch (p->node_type){
         case astEmptyProgram:
             break;
@@ -787,9 +814,13 @@ void main(int argc, char *argv[]) {
     asmData = fopen("./Compiler/AssemblyData.asm", "w+");
     asmCode = fopen("./Compiler/AssemblyCode.asm", "w+");
 
+	printf("Debug1\n");
     if (astroot->node_type != astEmptyProgram) {
+		printf("Debug2\n");
         enterInitCode();
+		printf("Debug3\n");
         generateCode(astroot, 0);
+		printf("Debug4\n");
     }
     else {
         enterEmptyProgramCode();
