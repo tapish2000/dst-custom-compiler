@@ -1,7 +1,6 @@
 start {
-  integer a is 5;
-  integer b is 10;
-  integer c is a + b;
-  double d is 10.5;
-  string s is "Hello";
+  array <integer,2> arr is [1,2];
+  if(arr[0] equals 2){
+    show("It is 2\n");
+  }
 }
