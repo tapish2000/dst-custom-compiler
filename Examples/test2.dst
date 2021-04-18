@@ -1,6 +1,4 @@
 start {
-  array <integer,2> arr is [1,2];
-  if(arr[0] equals 2){
-    show("It is 2\n");
-  }
+  integer a is 5;
+  integer b is 6;
 }
