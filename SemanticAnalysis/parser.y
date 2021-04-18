@@ -16,6 +16,8 @@ struct Symbol *currmethod;
 union Value value;
 struct Symbol *newsym;
 
+int enableRetStuck = 1;
+
 int whileTop=-1;
 struct Symbol *while_stack[30];
 
@@ -23,14 +25,6 @@ int rtop = -1;
 struct Symbol *rs[30];
 
 int vtop = -1;
-struct Symbol *vs[30];
-
-int enableRetStuck = 1;
-int TopOfWhileStack=-1;
-struct Symbol *while_stack[30];
-int TopOfRetStack=-1;
-struct Symbol *ret_stack[30];
-int TopOfStack=-1;
 struct Symbol *vs[30];
 
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
@@ -276,7 +270,9 @@ else_stmt:                        ELSE '{' stmts_list '}'
 conditions:                       boolean 
                                   {
                                     $$ = $1;
+                                    printf("In Condition boolean1\n");
                                     s1 = popV();
+                                    printf("In Condition boolean2\n");
                                     if(s1->type == 2 || s1->type == 4) {
                                       printf("Error! Type of %s not compatible for boolean operations\n", s1->name);
                                       error_code = 1;
@@ -317,7 +313,6 @@ conditions:                       boolean
 
 boolean:                          boolean  rel_op  expr 
                                   {
-                                    $$ = makeNode(astBoolean, NULL, $1, $2, $3, NULL);
                                     s1 = popV();
                                     s2 = popV();
                                     if(s1->type == 2 || s1->type == 4) {
@@ -336,10 +331,13 @@ boolean:                          boolean  rel_op  expr
                                       type = 0;
                                       size = 4;
                                     }
-                                    pushV(makeSymbol("", type, &value, size, 'c', 0, 0));
+                                    sym=makeSymbol("", type, &value, size, 'c', 0, 0);
+                                    pushV(sym);
+                                    $$ = makeNode(astBoolean, sym, $1, $2, $3, NULL);
                                   }
                                   | expr 
                                   {
+                                    printf("Boolean Expression1\n");
                                     $$ = $1;
                                   };
 
@@ -514,7 +512,6 @@ assignment:                       ASSIGN expr
 expr:                             expr op value 
                                   {
                                     printf("expr1\n");
-                                    $$ = makeNode(astExpr, NULL, $1, $2, $3, NULL);
                                     s1 = popV();
                                     s2 = popV();
                                     if(s1->type == 2|| s1->type == 4) {
@@ -549,6 +546,7 @@ expr:                             expr op value
                                     }
                                     sym = makeSymbol("", type, &value, size, 'c', 0, 0);
                                     pushV(sym);
+                                    $$ = makeNode(astExpr, sym, $1, $2, $3, NULL);
                                   }
                                   | value
                                   {
@@ -567,16 +565,19 @@ value:                            func_call
                                   }
                                   | arr
                                   {
+                                    printf("value array\n");
                                     $$ = $1;
                                   }; 
 
 arr:                              arr '[' data ']' 
                                   {
-                                    $$ = makeNode(astArr, NULL, $1, $3, NULL, NULL);
+                                    sym = $1->symbol_node;
+                                    sym->value = popV()->value;
+                                    $$ = makeNode(astArr, sym, $1, $3, NULL, NULL);
                                   }
                                   | ID 
                                   {
-                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
+                                    printf("Array ID\n");
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
@@ -586,24 +587,24 @@ arr:                              arr '[' data ']'
                                     else {
                                       pushV(sym);
                                     }
+                                    $$ = makeNode(astId, sym, NULL, NULL, NULL, NULL);
                                   }; 
 
 data:                             INT_CONST 
                                   {
-                                    $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
                                     sym = makeSymbol("INT_CONST", 0, &value, 4, 'c', 1, 0);
+                                    $$ = makeNode(astData, sym, NULL, NULL, NULL, NULL);
                                   }
                                   | ID
                                   {
-                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
-                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
+                                    $$ = makeNode(astId, sym, NULL, NULL, NULL, NULL);
                                   }; 
 
 data_type:                        INT 
@@ -859,14 +860,14 @@ void ShowVStack(){
 void pushV(struct Symbol *p)
 {
    vs[++vtop]=p;
-   printf("\nPush\n");
-   ShowVStack();
+  //  printf("\nPush\n");
+  //  ShowVStack();
 }
 
 struct Symbol *popV()
 { 
-   printf("\nPop\n");
-   ShowVStack();
+  //  printf("\nPop\n");
+  //  ShowVStack();
    return(vs[vtop--]);
 }
 

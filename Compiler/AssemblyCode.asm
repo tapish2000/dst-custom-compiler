@@ -12,8 +12,16 @@ _main:
 ; ----------------------- ;
 
 _source_start:
-    push ebp
-    mov  ebp, esp
-
-; ----------------------- ;
-
+    addiu $sp,$sp,-8
+    sw $fp,4($sp)
+    move $fp,$sp
+    li  $2, 5
+    sw  $2, 12($fp)
+    li  $2, 6
+    sw  $2, 20($fp)
+move $2,$0
+move $sp,$fp
+lw $fp,4($sp)
+addiu $sp,$sp,8
+j $31
+nop
