@@ -76,11 +76,42 @@ void processContinue(struct Ast_node *p) {
 } 
 
 void processAssignStmt(struct Ast_node *p, int level) {
-	struct Symbol *lhs,*rhs;
+	struct Symbol *lhs, *rhs;
     generateCode(p->child_node[0], level + 1);  // Parameter
 	lhs = popV();
-	// printf("############ %s",lhs->asm_name);
     generateCode(p->child_node[1], level + 1);  // Assignment
+	rhs = popV();
+	switch (lhs->type){
+		case 0:
+			switch (rhs->type){
+				case 0:				// ---- INT = INT ---- //
+					switch (rhs->asmclass){						
+						case 'm':		
+							// fprintf(asmCode, "    mov  eax, [%s]\n", rhs->MIXname);
+							fprintf(asmCode, "    lw  $2, $%d($fp)\n",rhs->asm_location);
+							fprintf(asmCode, "    sw  $2, $%d($fp)\n",param_bytes);
+							lhs->asm_location = param_bytes;
+							param_bytes += 4;
+						break;
+						case 'c':
+							fprintf(asmCode, "    li  $2, %d\n", rhs->value.ivalue);
+							fprintf(asmCode, "    sw  $2, %d($fp)\n", param_bytes);
+							lhs->asm_location = param_bytes;
+							param_bytes += 4;
+						break;
+						case 'r':
+							// fprintf(asmCode, "    lw  $2, [REG_INT]\n");
+						break;
+						case 's':
+							printf("IMPOSSIBLE (LOCATION=STACK)");
+						break;
+					}	
+					// fprintf(asmCode, "    mov  dword [%s], eax\n", lhs->MIXname);
+				break;
+			}
+		break;
+	}	
+	pushV(rhs);
 }
 
 void processArrayAssignStmt(struct Ast_node *p, int level) {
@@ -421,6 +452,7 @@ void processParam(struct Ast_node *p, int level) {
 	default:
 		break;
 	}
+	pushV(p);
 } 
 
 void processAssignment(struct Ast_node *p, int level) {
@@ -444,6 +476,7 @@ void processData(struct Ast_node *p) {
 
 void processIntConst(struct Ast_node *p) {
 	printf("processIntConst - %d\n", p->node_type);
+	p->symbol_node->asmclass = 'c';
 	// push_vs(p->symbol_node);
 }
 
