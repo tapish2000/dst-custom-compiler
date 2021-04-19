@@ -716,6 +716,65 @@ void processExpr(struct Ast_node *p, int level) {
 			break;
 		}
 	}
+	else if(strcmp(op->name,"astSub")==0){
+		sym->value.ivalue = lhs->value.ivalue - val->value.ivalue;
+		sym->asmclass = 'r';
+		int l;
+		int r;
+		switch (lhs->asmclass){
+			case 'm':
+				l = freeregister();
+				fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
+				registers[l-2] = 1;
+				lhs->reg = l;
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						registers[r-2] = 1;
+						val->reg = r;
+						fprintf(asmCode, "    subu $%d, $%d, $%d\n",l,r,l);
+						sym->reg = l;
+					break;
+					case 'c':
+						fprintf(asmCode, "    subu $%d, $%d, %d\n",l,l,val->value.ivalue);
+						sym->reg = l;
+					break;
+					case 'r':
+					// No idea if this case is possible.
+						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+					break;
+					case 's':
+						printf("IMPOSSIBLE ('m'-'s')\n");
+					break;
+				}	
+			break;
+			case 'c':
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						registers[r-2] = 1;
+						val->reg = r;
+						fprintf(asmCode, "    subu $%d, $%d, %d\n",r,r,lhs->value.ivalue);
+						sym->reg = r;
+					break;
+					case 'c':
+						sym->value.ivalue = lhs->value.ivalue - val->value.ivalue;
+						sym->asmclass='c';
+					break;
+					case 'r':
+					// No idea if this case is possible
+						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
+						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+					break;
+					case 's':
+						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
+					break;
+				}
+			break;
+		}
+	}
 	// printf("Checking Operator type : %s\n",p->child_node[1]->symbol_node->asmclass);
 	printf("----> %d\n",sym->value.ivalue);
 	pushV(sym);
@@ -776,6 +835,12 @@ void processAdd(struct Ast_node *p){
 void processMul(struct Ast_node* p){
 	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
 	strcpy(new->name,"astMul");
+	pushV(new);
+}
+
+void processSub(struct Ast_node* p){
+	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
+	strcpy(new->name,"astSub");
 	pushV(new);
 }
 
@@ -935,7 +1000,7 @@ void generateCode(struct Ast_node *p, int level) {
             processAdd(p);
             break;
         case astSub: 
-            
+            processSub(p);
             break;
         case astMul:
             processMul(p);
