@@ -611,9 +611,11 @@ void processExpr(struct Ast_node *p, int level) {
 						sym->reg = l;
 					break;
 					case 'c':
-						fprintf(asmCode, "    add  eax, %d\n", val->value.ivalue);
+						fprintf(asmCode, "    addu $%d, $%d, %d\n",l,l,val->value.ivalue);
+						sym->reg = l;
 					break;
 					case 'r':
+					// No idea if this case is possible.
 						fprintf(asmCode, "    add  eax, [REG_INT]\n");
 					break;
 					case 's':
@@ -624,14 +626,19 @@ void processExpr(struct Ast_node *p, int level) {
 			case 'c':
 				switch (val->asmclass){
 					case 'm':
-						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
-						fprintf(asmCode, "    add  eax, [%s]\n", val->asm_name);
+						r = freeregister();
+						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						registers[r-2] = 1;
+						val->reg = r;
+						fprintf(asmCode, "    addu $%d, $%d, %d\n",r,r,lhs->value.ivalue);
+						sym->reg = r;
 					break;
 					case 'c':
 						sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
 						sym->asmclass='c';
 					break;
 					case 'r':
+					// No idea if this case is possible
 						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
 						fprintf(asmCode, "    add  eax, [REG_INT]\n");
 					break;

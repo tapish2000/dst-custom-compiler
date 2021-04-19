@@ -1,5 +1,4 @@
 start {
   integer a is 6;
-  integer c is 4;
-  integer b is a + c;
+  integer b is a + 7;
 }

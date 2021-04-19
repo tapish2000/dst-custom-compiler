@@ -17,12 +17,9 @@ _source_start:
     move $fp,$sp
     li  $2, 6
     sw  $2, 8($fp)
-    li  $2, 4
-    sw  $2, 12($fp)
-    lw $2, 12($fp)
-    lw $3, 8($fp)
-    addu $2, $3, $2
-    sw $2, 16($fp)
+    lw $2, 8($fp)
+    addu $2, $2, 7
+    sw $2, 12($fp)
     move $2,$0
     move $sp,$fp
     lw $fp,4($sp)
