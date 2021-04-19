@@ -267,99 +267,20 @@ void processLoop(struct Ast_node *p, int level) {
 } 
 
 void processConditional(struct Ast_node *p, int level) {
+	num_ifs++;
+	int temp = num_ifs;
 	struct Symbol* lhs;
-	printf("ConditionalCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Conditions for if condition or boolean called directly
 	lhs = popV();
-	printf("-- %s %d %c --\n",lhs->name,lhs->type,lhs->asmclass);
-	int temp_ifs = 0;
-	if(p->child_node[2]!=NULL) {
-		switch (lhs->type){
-			// Integer type
-			case 0:
-				switch (lhs->asmclass){
-					case 'm':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'r':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'c':
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 's':
-						printf("\nStack call not possible for if statement\n");
-						break;
-				}
-				break;
-			// Double Type
-			case 1:
-				break;
-			// String Type
-			case 2:
-				break;
-			// Boolean Type
-			case 3:
-				break;
-			default:
-				break;
-		}
+	if(lhs->value.ivalue == 0){
+		fprintf(asmCode,"	beq $%d $0 endif%d\n",lhs->reg,temp);
 	}else{
-		switch (lhs->type){
-			// Integer type
-			case 0:
-				switch (lhs->asmclass){
-					case 'm':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   Else%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'r':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   Else%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'c':
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 's':
-						printf("\nStack call not possible for if statement\n");
-						break;
-				}
-				break;
-			// Double Type
-			case 1:
-				break;
-			// String Type
-			case 2:
-				break;
-			// Boolean Type
-			case 3:
-				break;
-			default:
-				break;
-		}
-		fprintf(asmCode, "    jmp  EndIf%d\n", temp_ifs);
-		fprintf(asmCode, "    Else%d:\n", temp_ifs);
-		generateCode(p->child_node[2], level + 1);	// Remaining Conditions
+		fprintf(asmCode,"	bne $%d $0 endelse%d\n",lhs->reg,temp);
 	}
-	fprintf(asmCode, "    EndIf%d:\n", temp_ifs); // Ending the if caluse
+	generateCode(p->child_node[1], level + 1); // statements list
+	fprintf(asmCode,"	endif%d:\n",temp);
+	generateCode(p->child_node[2], level + 1); // remaining conditions
+	fprintf(asmCode,"	endelse%d:\n",temp);
 }
 
 void processRemaiCond(struct Ast_node *p, int level) {

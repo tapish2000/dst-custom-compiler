@@ -20,9 +20,11 @@ _source_start:
 	lw $2 8($fp)
 	li $3 7
 	li $2 0
-    jmp  EndIf0
-    Else0:
-    EndIf0:
+	beq $2 $0 endif1
+    li  $2, 7
+    sw  $2, 12($fp)
+	endif1:
+	endelse1:
     move $2,$0
     move $sp,$fp
     lw $fp,4($sp)
