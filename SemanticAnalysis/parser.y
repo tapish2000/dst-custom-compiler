@@ -211,7 +211,7 @@ withoutSemcol:                    loop
                                     $$ = $1;
                                   };
 
-assign_stmt:                      param assignment 
+assign_stmt:                      param assignment
                                   {
                                     printf("assign_stmt\n");
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
@@ -579,7 +579,7 @@ arr:                              arr '[' data ']'
                                   {
                                     printf("Array ID\n");
                                     sym = NULL;
-                                    sym = find_variable($1); 
+                                    sym = find_variable($1);
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
