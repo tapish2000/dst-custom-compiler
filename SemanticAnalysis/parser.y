@@ -941,7 +941,7 @@ void Init_While_Stack() {
 void Show_While_Stack() {
 	printf("\n--- WHILE STACK ---\n");
 	for (int i = whileTop; i >= 0; i--) {
-		printf("%d\n", while_stack[i]->value);
+		printf("%d\n", while_stack[i]->value.ivalue);
 	}
 	printf("--- END ---\n");
 }

@@ -15,13 +15,15 @@ _source_start:
     addiu $sp,$sp,-8
     sw $fp,4($sp)
     move $fp,$sp
-    li  $2, 5
+    li  $2, 0
     sw  $2, 12($fp)
-    li  $2, 6
-    sw  $2, 20($fp)
-move $2,$0
-move $sp,$fp
-lw $fp,4($sp)
-addiu $sp,$sp,8
-j $31
+loopif1:
+	beq $0, $0, endloopif1
+	nop
+endloop1:
+	move $2,$0
+    move $sp,$fp
+    lw $fp,4($sp)
+    addiu $sp,$sp,8
+    j $31
 nop

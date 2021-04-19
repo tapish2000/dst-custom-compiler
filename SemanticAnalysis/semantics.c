@@ -8,15 +8,24 @@
 FILE* asmCode; // for asm code file 
 FILE* asmData; // for asm data
 
-extern struct Ast_node *astroot; // root of the tree
+extern struct Ast_node *astroot; 	// root of the tree
 extern FILE * yyin;
 
 int num_ifs = 0;
-int num_whiles = 0;
+int num_loops = 0;
 int param_bytes = 8;
+int registers[20] = {0};  			// 0 means registers are free
 
-/************ Tree traversal for output ************/
 /************ Required subroutines for code generation *******/
+int freeregister(){
+    for(int i=0;i<20;i++){
+        if(registers[i]==0){
+            return i+2;
+        }
+    }
+    return -1;
+}
+
 void processProgram(struct Ast_node *p, int level) {
 	int offset_bytes = -8;
 	if (p->child_node[0]) {
@@ -70,7 +79,7 @@ void processStmtsList(struct Ast_node *p, int level) {
 } 
 
 void processBreak() {
-    fprintf(asmCode, "    jmp  EndWhile%d\n", top_while()->value.ivalue);
+    fprintf(asmCode, "    jmp  endloopif%d\n", top_while()->value.ivalue);
 } 
 
 void processContinue(struct Ast_node *p) {
@@ -124,128 +133,22 @@ void processArrayAssignStmt(struct Ast_node *p, int level) {
 void processLoop(struct Ast_node *p, int level) {
     struct Symbol *lhs;
     struct Symbol *while_symbol;
-    int temp_num_whiles;
+    int temp_num_loops;
 
-    num_whiles++;
-    temp_num_whiles = num_whiles;
+    num_loops++;
+    temp_num_loops = num_loops;
 
-    fprintf(asmCode, "    While%d:\n", temp_num_whiles);
+    fprintf(asmCode, "loopif%d:\n", temp_num_loops);
 
     generateCode(p->child_node[0], level + 1);  // Conditions
-	// lhs = pop_vs();		// after creating a vs
+	lhs = popV();	
 
-    switch (lhs->type)
-    {
-    case 0:     // INTEGER
-        switch (lhs->asmclass) 
-        {
-            case 'm':       // MEMORY
-                // while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
+	fprintf(asmCode, "\tbeq $%d, $0, endloopif%d\n", lhs->reg, temp_num_loops);
+	fprintf(asmCode, "\tnop\n");
 
-                // fprintf(asmCode, "    mov  ecx, [%s]\n", lhs->MIXname);	// MIX Variables yet to be made
-                fprintf(asmCode, "    cmp  ecx, 0\n");
-                fprintf(asmCode, "    je   EndWhile%d\n", temp_num_whiles);
+	generateCode(p->child_node[1], level + 1);	// Statement List
 
-                generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 'c':		// CONSTANT
-				if (lhs->value.ivalue != 0) {
-					// while_symbol = makeSymbol("", );    // to be added later
-					push_while(while_symbol);
-
-					generateCode(p->child_node[1], level + 1);  // Statements List
-
-					fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-					fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-					
-					pop_while();
-				}
-				break;
-			case 'r':		// REGISTER
-				// while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
-
-				fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-				fprintf(asmCode, "    cmp  ecx, 0\n");
-				fprintf(asmCode, "    je   EndWhile%d\n", temp_num_whiles);
-
-				generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 's':		// STACK
-				printf("STACK in loopif - Not Possible\n");
-				break;
-        }
-        break;
-    case 1:		// DOUBLE
-		switch (lhs->asmclass) 
-        {
-            case 'm':       // MEMORY
-                // while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
-
-                // fprintf(asmCode, "    fld  qword [%s]\n", lhs->MIXname);	// MIX Variables yet to be made
-                fprintf(asmCode, "    fldz\n");
-				fprintf(asmCode, "    fcomip\n");
-				fprintf(asmCode, "    ffreep\n");
-				fprintf(asmCode, "    jz   EndWhile%d\n", temp_num_whiles);
-
-                generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 'c':		// CONSTANT
-				if (lhs->value.ivalue != 0) {
-					// while_symbol = makeSymbol("", );    // to be added later
-					push_while(while_symbol);
-
-					generateCode(p->child_node[1], level + 1);  // Statements List
-
-					fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-					fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-					
-					pop_while();
-				}
-				break;
-			case 'r':		// REGISTER
-				// while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
-
-				fprintf(asmCode, "    fld  qword [REG_REAL]\n");
-				fprintf(asmCode, "    fldz\n");
-				fprintf(asmCode, "    fcomip\n");
-				fprintf(asmCode, "    ffreep\n");
-				fprintf(asmCode, "    jz   EndWhile%d\n", temp_num_whiles);
-
-				generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 's':		// STACK
-				printf("STACK in loopif - Not Possible\n");
-				break;
-        }
-        break;
-    default:
-		printf("Error in semantics.c: Neither INTEGER nor DOUBLE");
-        break;
-    }
+	fprintf(asmCode, "endloop%d:\n", temp_num_loops);
 } 
 
 void processConditional(struct Ast_node *p, int level) {
@@ -612,31 +515,7 @@ void processId(struct Ast_node *p) {
 	printf("Checking %d----->\n",p->symbol_node->type);
 	// Not clear what to write here, to be discussed
 }
-
-
-
-/************ Initializer of asm files ****************/
-void enterInitCode() {
-    fprintf(asmData, "section .data\n\n");
-	fprintf(asmData, "cw dw 057fH\n");
-	fprintf(asmData, "integer_1 dd 1\n");
-	fprintf(asmData, "REG_INT  dd 0\n");
-	fprintf(asmData, "REG_REAL dq 0.0\n");
-	fprintf(asmData, "format_read_int db \"%%d\", 0\n");
-	fprintf(asmData, "format_read_char db \"%%c\", 0\n");
-	fprintf(asmData, "format_read_real db \"%%lf\", 0\n");
-	fprintf(asmCode, "\nsection .text\n\n");
-	fprintf(asmCode, "extern _printf\n");
-	fprintf(asmCode, "extern _scanf\n");
-	fprintf(asmCode, "global _main\n");
-	fprintf(asmCode, "_main:\n");
-	fprintf(asmCode, "    fldcw [cw]\n");
-	fprintf(asmCode, "    call _source_start\n");
-	fprintf(asmCode, "    ret\n");
-	
-	fprintf(asmCode, "\n; ----------------------- ;\n\n");
-}
-
+ 
 
 /************ Code generation by traversing Tree ***************/
 void generateCode(struct Ast_node *p, int level) {
@@ -828,10 +707,7 @@ void generateCode(struct Ast_node *p, int level) {
 }
 
 void enterEmptyProgramCode() {
-    fprintf(asmCode, "\nsection .text\n");
-	fprintf(asmCode, "global _main\n");
-	fprintf(asmCode, "_main:\n");
-	fprintf(asmCode, "    ret\n");
+    fprintf(asmCode, "// Nothing written in the program!!!\n");
 }
 
 
@@ -849,16 +725,10 @@ void main(int argc, char *argv[]) {
 	traverse(astroot, -3);
 	// Print_Tables();
 
-    asmData = fopen("./Compiler/AssemblyData.asm", "w+");
     asmCode = fopen("./Compiler/AssemblyCode.asm", "w+");
 
-	printf("Debug1\n");
     if (astroot->node_type != astEmptyProgram) {
-		printf("Debug2\n");
-        enterInitCode();
-		printf("Debug3\n");
         generateCode(astroot, 0);
-		printf("Debug4\n");
     }
     else {
         enterEmptyProgramCode();
