@@ -1,19 +1,20 @@
-_source_start:
-    addiu $sp,$sp,-20
-    sw $fp,16($sp)
+main:
+    addiu $sp,$sp,-16
+    sw $fp,12($sp)
     move $fp,$sp
-    li  $2, 6
+    li  $2, 0
     sw  $2, 8($fp)
-    li  $2, 4
+	lw $2 8($fp)
+	li $3 5
+	slt $2 $2 $3
+	bne $2 $0 endelse1
+    li  $2, 6
     sw  $2, 12($fp)
-    lw $2, 12($fp)
-    lw $3, 8($fp)
-    mult $2, $3
-    mflo $3
-    sw $3, 16($fp)
+	endif1:
+	endelse1:
     move $2,$0
     move $sp,$fp
-    lw $fp,16($sp)
-    addiu $sp,$sp,20
+    lw $fp,12($sp)
+    addiu $sp,$sp,16
     j $31
 nop

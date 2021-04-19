@@ -37,7 +37,7 @@ void processProgram(struct Ast_node *p, int level) {
 	}
 
 
-	fprintf(asmCode, "%s:\n", p->symbol_node->asm_name);
+	fprintf(asmCode, "main:\n");
 	fprintf(asmCode, "    addiu $sp,$sp,%d\n",offset_bytes);
 	fprintf(asmCode, "    sw $fp,%d($sp)\n",-offset_bytes - 4);
 	fprintf(asmCode, "    move $fp,$sp\n");
@@ -98,6 +98,7 @@ void processAssignStmt(struct Ast_node *p, int level) {
 	printf("Assignment: name: %s \n",lhs->name);
     generateCode(p->child_node[1], level + 1);  // Assignment
 	rhs = popV();
+	printf("Assignment value : %d\n", rhs->value.ivalue);
 	switch (lhs->type){
 		case 0:
 			switch (rhs->type){
@@ -1138,7 +1139,7 @@ void processSub(struct Ast_node* p){
 }
 
 void enqueue(struct Symbol* sym) {
-	printf("Vaish: %d \n", sym->value.ivalue);
+	// printf("Vaish: %d \n", sym->value.ivalue);
 	if(end==30) {
 		end = 0;
 	}
