@@ -579,7 +579,7 @@ arr:                              arr '[' data ']'
                                   {
                                     printf("Array ID\n");
                                     sym = NULL;
-                                    sym = find_variable($1); 
+                                    sym = find_variable($1);
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
