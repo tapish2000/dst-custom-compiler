@@ -15,7 +15,7 @@ struct Symbol* iq[30];
 int start=0, end=0;
 
 int num_ifs = 0;
-int num_whiles = 0;
+int num_loops = 0;
 int param_bytes = 8;
 int registers[20] = {0};  // 0 means registers are free
 
@@ -83,7 +83,7 @@ void processStmtsList(struct Ast_node *p, int level) {
 } 
 
 void processBreak() {
-    fprintf(asmCode, "    jmp  EndWhile%d\n", top_while()->value.ivalue);
+    fprintf(asmCode, "    jmp  endloop%d\n", top_while()->value.ivalue);
 } 
 
 void processContinue(struct Ast_node *p) {
@@ -133,13 +133,7 @@ void processAssignStmt(struct Ast_node *p, int level) {
 	// strcpy(rhs->name,lhs->name);
 	// rhs->type = lhs->type;
 	// rhs->asm_location = lhs->asm_location;
-	lhs->value.ivalue = rhs->value.ivalue;void processIntConst(struct Ast_node *p) {
-	p->symbol_node->asmclass = 'c';
-	pushV(p->symbol_node);
-	printf("processIntConst - %d\n", p->node_type);
-	p->symbol_node->asmclass = 'c';
-	// push_vs(p->symbol_node);
-}
+	lhs->value.ivalue = rhs->value.ivalue;
 	pushV(lhs);
 }
 
@@ -201,128 +195,22 @@ void processArrayAssignStmt(struct Ast_node *p, int level) {
 void processLoop(struct Ast_node *p, int level) {
     struct Symbol *lhs;
     struct Symbol *while_symbol;
-    int temp_num_whiles;
+    int temp_num_loops;
 
-    num_whiles++;
-    temp_num_whiles = num_whiles;
+    num_loops++;
+    temp_num_loops = num_loops;
 
-    fprintf(asmCode, "    While%d:\n", temp_num_whiles);
+    fprintf(asmCode, "loopif%d:\n", temp_num_loops);
 
     generateCode(p->child_node[0], level + 1);  // Conditions
-	// lhs = pop_vs();		// after creating a vs
+	lhs = popV();	
 
-    switch (lhs->type)
-    {
-    case 0:     // INTEGER
-        switch (lhs->asmclass) 
-        {
-            case 'm':       // MEMORY
-                // while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
+	fprintf(asmCode, "    beq $%d, $0, endloopif%d\n", lhs->reg, temp_num_loops);
+	fprintf(asmCode, "    nop\n");
 
-                // fprintf(asmCode, "    mov  ecx, [%s]\n", lhs->MIXname);	// MIX Variables yet to be made
-                fprintf(asmCode, "    cmp  ecx, 0\n");
-                fprintf(asmCode, "    je   EndWhile%d\n", temp_num_whiles);
+	generateCode(p->child_node[1], level + 1);	// Statement List
 
-                generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 'c':		// CONSTANT
-				if (lhs->value.ivalue != 0) {
-					// while_symbol = makeSymbol("", );    // to be added later
-					push_while(while_symbol);
-
-					generateCode(p->child_node[1], level + 1);  // Statements List
-
-					fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-					fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-					
-					pop_while();
-				}
-				break;
-			case 'r':		// REGISTER
-				// while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
-
-				fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-				fprintf(asmCode, "    cmp  ecx, 0\n");
-				fprintf(asmCode, "    je   EndWhile%d\n", temp_num_whiles);
-
-				generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 's':		// STACK
-				printf("STACK in loopif - Not Possible\n");
-				break;
-        }
-        break;
-    case 1:		// DOUBLE
-		switch (lhs->asmclass) 
-        {
-            case 'm':       // MEMORY
-                // while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
-
-                // fprintf(asmCode, "    fld  qword [%s]\n", lhs->MIXname);	// MIX Variables yet to be made
-                fprintf(asmCode, "    fldz\n");
-				fprintf(asmCode, "    fcomip\n");
-				fprintf(asmCode, "    ffreep\n");
-				fprintf(asmCode, "    jz   EndWhile%d\n", temp_num_whiles);
-
-                generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 'c':		// CONSTANT
-				if (lhs->value.ivalue != 0) {
-					// while_symbol = makeSymbol("", );    // to be added later
-					push_while(while_symbol);
-
-					generateCode(p->child_node[1], level + 1);  // Statements List
-
-					fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-					fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-					
-					pop_while();
-				}
-				break;
-			case 'r':		// REGISTER
-				// while_symbol = makeSymbol("", );    // to be added later
-                push_while(while_symbol);
-
-				fprintf(asmCode, "    fld  qword [REG_REAL]\n");
-				fprintf(asmCode, "    fldz\n");
-				fprintf(asmCode, "    fcomip\n");
-				fprintf(asmCode, "    ffreep\n");
-				fprintf(asmCode, "    jz   EndWhile%d\n", temp_num_whiles);
-
-				generateCode(p->child_node[1], level + 1);  // Statements List
-
-				fprintf(asmCode, "    jmp  While%d\n", temp_num_whiles);
-				fprintf(asmCode, "    EndWhile%d:\n", temp_num_whiles);
-				
-				pop_while();
-				break;
-			case 's':		// STACK
-				printf("STACK in loopif - Not Possible\n");
-				break;
-        }
-        break;
-    default:
-		printf("Error in semantics.c: Neither INTEGER nor DOUBLE");
-        break;
-    }
+	fprintf(asmCode, "endloop%d:\n", temp_num_loops);
 } 
 
 void processConditional(struct Ast_node *p, int level) {
@@ -1159,7 +1047,7 @@ void processData(struct Ast_node *p) {
 void processIntConst(struct Ast_node *p) {
 	p->symbol_node->asmclass = 'c';
 	pushV(p->symbol_node);
-	printf("processIntConst - %d\n", p->node_type);
+	// printf("processIntConst - %d\n", p->node_type);
 	p->symbol_node->asmclass = 'c';
 	enqueue(p->symbol_node);
 	// push_vs(p->symbol_node);
@@ -1188,7 +1076,7 @@ void processId(struct Ast_node *p) {
 	t->asmclass = 'm';
 	// sym->asmclass = 'm'; 
 	pushV(t);
-	printf("Checking %d----->\n",t->value.ivalue);
+	// printf("Checking %d----->\n",t->value.ivalue);
 	// Not clear what to write here, to be discussed
 }
 
@@ -1483,10 +1371,7 @@ void generateCode(struct Ast_node *p, int level) {
 }
 
 void enterEmptyProgramCode() {
-    fprintf(asmCode, "\nsection .text\n");
-	fprintf(asmCode, "global _main\n");
-	fprintf(asmCode, "_main:\n");
-	fprintf(asmCode, "    ret\n");
+    fprintf(asmCode, "\nNo code added in the program\n");
 }
 
 
@@ -1507,13 +1392,8 @@ void main(int argc, char *argv[]) {
     asmData = fopen("./Compiler/AssemblyData.asm", "w+");
     asmCode = fopen("./Compiler/AssemblyCode.asm", "w+");
 
-	printf("Debug1\n");
     if (astroot->node_type != astEmptyProgram) {
-		printf("Debug2\n");
-        enterInitCode();
-		printf("Debug3\n");
         generateCode(astroot, 0);
-		printf("Debug4\n");
     }
     else {
         enterEmptyProgramCode();
@@ -1698,8 +1578,9 @@ void traverse(struct Ast_node *p, int n)
 				spacing(n); printf("astId\n"); 
 				break;
 			default: 
-				printf("AGNOSTO=%d\n",p->node_type);
+				printf("Not Found = %d\n",p->node_type);
 		}
 		for(i=0; i<4; i++) traverse(p->child_node[i],n);
 	}
+
 }

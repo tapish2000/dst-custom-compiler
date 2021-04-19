@@ -10,7 +10,7 @@ void default_value(int type);
 struct Ast_node* astroot;
 char name[20];
 int type, size, no_of_elements, no_of_params, no_of_args, error_code = 0;
-int_stack_index = 0;
+int int_stack_index = 0;
 char tag;
 struct Symbol *sym, *s1, *s2;
 struct Symbol *currmethod;
@@ -226,7 +226,7 @@ withoutSemcol:                    loop
                                     $$ = $1;
                                   };
 
-assign_stmt:                      data_type ID assignment 
+assign_stmt:                      param assignment 
                                   {
                                     printf("assign_stmt\n");
                                     s1 = popV();
@@ -239,10 +239,7 @@ assign_stmt:                      data_type ID assignment
                                       printf("Error! LHS and RHS of assignment are not of matching data types\n");
                                       error_code = 1;
                                     } else {
-                                      sym = makeSymbol($2, s2->type, &value, s2->size, 'v', 1, 0);
-                                      add_variable_to_table(sym);
-                                      sym->asm_location = 8 + int_stack_index*4;
-                                      int_stack_index++;
+                                      sym = makeSymbol(s2->name, s2->type, &value, s2->size, 'v', 1, 0);
                                     }
                                     $$ = makeNode(astAssignStmt, sym, $1, $2, NULL, NULL);
 
@@ -621,7 +618,7 @@ value:                            func_call
                                   }; 
 
 arr:                              ID '[' data ']' 
-                                 {
+                                  {
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
@@ -1084,7 +1081,7 @@ void add_method_to_table(struct Symbol *symbp)
   struct Symbol *exists, *newme;
 
   newme=symbp;
-   
+  
 	exists=find_method(newme->func_name);
 	if( !exists )
 	{
