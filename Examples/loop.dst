@@ -1,7 +1,0 @@
-start {
-  integer i is 0;
-  if (i < 5) {
-    integer j is 6;
-  }
-}
-
