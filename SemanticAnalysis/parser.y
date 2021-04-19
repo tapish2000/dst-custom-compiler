@@ -4,14 +4,16 @@
 
 int yyerror(char*);
 int yylex();
+extern FILE * yyin; //Remove
 
 void default_value(int type);
 
 struct Ast_node* astroot;
 char name[20];
-int type, size, no_elements, no_of_params, no_of_args, error_code = 0;
+int type, size, no_of_elements, no_of_params, no_of_args, error_code = 0;
 char tag;
 struct Symbol *sym, *s1, *s2;
+int *int_stack, int_stack_index = 0;
 struct Symbol *currmethod;
 union Value value;
 struct Symbol *newsym;
@@ -55,7 +57,7 @@ struct Symbol *curMethod = NULL;
 %type <node> stmts_list stmt withSemcol withoutSemcol
 %type <node> array_decl return_stmt func_call func_type
 %type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
-%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
+%type <node> expr array_assign assign_stmt assignment args_list args id_list
 %type <node> data constant arr value
 
 %%
@@ -195,10 +197,24 @@ withSemcol:                       param
                                   }
                                   | BREAK 
                                   {
+                                    s1 = pop_while();
+                                    if(s1) {
+                                      push_while(makeSymbol("loop", 4, &value, 0, 0, 0, 0));
+                                    } else {
+                                      printf("ERROR! Break must be in a while loop\n");
+                                      exit(1);
+                                    }                        
                                     $$ = makeNode(astBreak, NULL, NULL, NULL, NULL, NULL);
                                   }
                                   | CONT 
                                   {
+                                    s1 = pop_while();
+                                    if(s1) {
+                                      push_while(makeSymbol("loop", 4, &value, 0, 0, 0, 0));
+                                    } else {
+                                      printf("ERROR! Continue must be in a while loop\n");
+                                      exit(1);
+                                    }   
                                     $$ = makeNode(astContinue, NULL, NULL, NULL, NULL, NULL);
                                   };
                                   
@@ -211,13 +227,23 @@ withoutSemcol:                    loop
                                     $$ = $1;
                                   };
 
-assign_stmt:                      param assignment 
+assign_stmt:                      data_type ID assignment 
                                   {
                                     printf("assign_stmt\n");
-                                    $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
-                                    popV();
-                                    popV();
-                                    // sym = find_variable(param->)
+                                    s1 = popV();
+                                    s2 = popV();
+                                    sym = NULL;
+                                    if(s1->type == 4 || s2->type == 4) {
+                                      printf("Error! No assignment for void types\n");
+                                      error_code = 1;
+                                    } else if(s1->type != s2->type) {
+                                      printf("Error! LHS and RHS of assignment are not of matching data types\n");
+                                      error_code = 1;
+                                    } else {
+                                      sym = makeSymbol($2, s2->type, &value, s2->size, 'v', 1, 0);
+                                      add_variable_to_table(sym);
+                                    }
+                                    $$ = makeNode(astAssignStmt, sym, $1, $2, NULL, NULL);
                                   }
                                   | arr assignment
                                   {
@@ -227,12 +253,21 @@ assign_stmt:                      param assignment
                                     if(s1->type == 4 || s2->type == 4) {
                                       printf("Error! No assignment for void types\n");
                                       error_code = 1;
+                                    } else if(s1->type != s2->type) {
+                                      printf("Error! LHS and RHS of assignment are not of matching data types\n");
+                                      error_code = 1;
                                     }
                                   };
 
-loop:                             LOOP '(' conditions ')' '{' stmts_list '}'
+loop:                             LOOP 
                                   {
-                                    $$ = makeNode(astLoop, NULL, $3, $6, NULL, NULL);
+                                    sym = makeSymbol("loop", 4, &value, 0, 0, 0, 0);
+                                    push_while(sym);
+                                  }
+                                  '(' conditions ')' '{' stmts_list '}'
+                                  {
+                                    $$ = makeNode(astLoop, NULL, $4, $7, NULL, NULL);
+                                    pop_while();
                                   };
 
 conditional:                      IF '(' conditions ')' '{' stmts_list '}' remain_cond
@@ -346,23 +381,26 @@ return_stmt:                      RET expr
                                     popV();
                                   };
 
-array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
+array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_assign 
                                   {
                                     $$ = makeNode(astArrayDecl, NULL, $3, $5, $8, NULL);
+                                    s1 = vs[vtop-no_of_elements];
+                                    s2 = vs[vtop-no_of_elements-1];
+                                    if(s1->value.ivalue != no_of_elements) {
+                                      printf("Error! Number of elements declared and assigned are not matching\n");
+                                      error_code = 1;
+                                    }
+                                    for(int i=0; i<no_of_elements; i++) {
+                                      s1 = popV();
+                                      if(s1->type != s2->type) {
+                                        printf("Error! Type of the array and the element are not matching\n");
+                                      }
+                                    }
                                     s1 = popV();
+                                    s2 = popV();
                                     default_value(s1->type);
-                                    sym = makeSymbol($7, s1->type, &value, s1->size, 'a', 0, 0);
+                                    sym = makeSymbol($7, s2->type, &value, s1->value.ivalue*4, 'a', s1->value.ivalue, 0);
                                     add_variable_to_table(sym);
-                                    pushV(sym);
-                                  };
-
-array_type:                       data_type 
-                                  {
-                                    $$ = $1;
-                                  }
-                                  | ARR '<' array_type ',' data '>'
-                                  {
-                                    $$ = makeNode(astArrayType, NULL, $3, $5, NULL, NULL);
                                   };
 
 func_call:                        func_type '(' args_list ')' 
@@ -476,15 +514,18 @@ array_assign:                     ASSIGN '[' id_list ']'
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
+                                    no_of_elements = 0;
                                   };
 
 id_list:                          id_list ',' constant 
                                   {
                                     $$ = makeNode(astIdList, NULL, $1, $3, NULL, NULL);
+                                    no_of_elements += 1;
                                   }
                                   | constant 
                                   {
                                     $$ = $1;
+                                    no_of_elements = 1;
                                   };
 
 param:                            data_type ID 
@@ -497,7 +538,7 @@ param:                            data_type ID
                                     add_variable_to_table(sym);
                                     pushV(sym);
                                     $$ = makeNode(astParam, sym, $1, NULL, NULL, NULL);
-                                  };
+                                  }
 
 assignment:                       ASSIGN expr 
                                   {
@@ -564,9 +605,17 @@ value:                            func_call
                                     $$ = $1;
                                   }; 
 
-arr:                              arr '[' data ']' 
+arr:                              ID '[' data ']' 
                                   {
                                     $$ = makeNode(astArr, NULL, $1, $3, NULL, NULL);
+                                    sym = NULL;
+                                    sym = find_variable($1); 
+                                    if(sym==NULL) {
+                                      printf("Error! Variable %s is not declared\n", $1);
+                                      error_code = 1;
+                                    }
+                                    s1 = popV();
+                                    pushV(sym);
                                   }
                                   | ID 
                                   {
@@ -577,9 +626,7 @@ arr:                              arr '[' data ']'
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
-                                    else {
-                                      pushV(sym);
-                                    }
+                                    pushV(sym);
                                   }; 
 
 data:                             INT_CONST 
@@ -587,6 +634,7 @@ data:                             INT_CONST
                                     $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
                                     sym = makeSymbol("INT_CONST", 0, &value, 4, 'c', 1, 0);
+                                    pushV(sym);
                                   }
                                   | ID
                                   {
@@ -598,6 +646,7 @@ data:                             INT_CONST
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
+                                    pushV(sym);
                                   }; 
 
 data_type:                        INT 
@@ -691,9 +740,11 @@ constant:                         INT_CONST
                                   {
                                     value.ivalue = $1;
                                     sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
+                                    sym->asm_location = 8 + int_stack_index*4;
                                     add_variable_to_table(sym);
                                     $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
                                     pushV(sym);
+                                    int_stack_index++;
                                   }
                                   | SUB INT_CONST 
                                   {
@@ -737,19 +788,21 @@ constant:                         INT_CONST
 
 %%
 
-// int main(int argc, char *argv[])
-// {
-//   if (argc != 2) {
-//       printf("\nUsage: <exefile> <inputfile>\n\n");
-//       exit(0);
-//   }
-//   Initialize_Tables();
-//   yyin = fopen(argv[1], "r");
-//   yyparse();
-//   traverse(astroot, -3);
-//   Print_Tables();
-//   return 0;
-// }
+ int main(int argc, char *argv[])
+ {
+   if (argc != 2) {
+       printf("\nUsage: <exefile> <inputfile>\n\n");
+       exit(0);
+   }
+   Initialize_Tables();
+   Init_While_Stack();
+   yyin = fopen(argv[1], "r");
+   yyparse();
+   printf("hey\n");
+   traverse(astroot, -3);
+   Print_Tables();
+   return 0;
+ }  
 
 int yyerror(char *s) {
   printf("\nError: %s\n",s);
@@ -934,7 +987,7 @@ void Init_While_Stack() {
 void Show_While_Stack() {
 	printf("\n--- WHILE STACK ---\n");
 	for (int i = whileTop; i >= 0; i--) {
-		printf("%d\n", while_stack[i]->value);
+		printf("%s\n", while_stack[i]->name);
 	}
 	printf("--- END ---\n");
 }
@@ -1292,3 +1345,184 @@ struct Symbol *find_method(char *s)
 // 		for(i=0; i<4; i++) traverse(p->child_node[i],n);
 // 	}
 // }
+
+void spacing(int n)    //Remove
+{  
+	int i;   
+	for(i=0; i<n; i++) printf(" ");
+}
+
+void traverse(struct Ast_node *p, int n)
+{  
+	int i;
+
+    n=n+3;
+    if(p)
+    {
+		switch (p->node_type)
+		{
+			case astProgram: 
+				spacing(n); printf("astProgram\n"); 
+				break;
+			case astFunctions: 
+				spacing(n); printf("astFunctions\n"); 
+				break;
+			case astFunction: 
+				spacing(n); printf("astFunction\n"); 
+				break;
+			case astFunctionName: 
+				spacing(n); printf("astFunctionName\n"); 
+				break;
+			case astParamList: 
+				spacing(n); printf("astParamList\n"); 
+				break;
+			case astStmtsList: 
+				spacing(n); printf("astStmtsList\n"); 
+				break;
+			case astBreak: 
+				spacing(n); printf("astBreak\n"); 
+				break;
+			case astContinue: 
+				spacing(n); printf("astContinue\n"); 
+				break;
+			case astAssignStmt: 
+				spacing(n); printf("astAssignStmt\n"); 
+				break;
+			case astLoop: 
+				spacing(n); printf("astLoop\n"); 
+				break;  
+			case astConditional: 
+				spacing(n); printf("astConditional\n"); 
+				break;   
+			case astRemaiCond: 
+				spacing(n); printf("astRemaiCond\n"); 
+				break;
+			case astElifStmts: 
+				spacing(n); printf("astElifStmts\n"); 
+				break;
+			case astElseStmt: 
+				spacing(n); printf("astElseStmt\n"); 
+				break;
+			case astConditions: 
+				spacing(n); printf("astConditions\n"); 
+				break;
+			case astBoolean:
+				spacing(n); printf("astBoolean\n"); 
+				break;
+			case astReturnStmt: 
+				spacing(n); printf("astReturnStmt\n"); 
+				break;
+			case astArrayDecl: 
+				spacing(n); printf("astArrayDecl\n"); 
+				break;
+			case astFuncCall: 
+				spacing(n); printf("astFuncCall\n"); 
+				break;
+			case astCustomFunc: 
+				spacing(n); printf("astCustomFunc\n"); 
+				break;
+			case astFuncShow: 
+				spacing(n); printf("astFuncShow\n"); 
+				break;
+			case astFuncTake: 
+				spacing(n); printf("astFuncTake\n"); 
+				break;
+			case astArgs:
+				spacing(n); printf("astArgs\n"); 
+				break;
+			case astArrayAssign: 
+				spacing(n); printf("astArrayAssign\n"); 
+				break;
+			case astIdList: 
+				spacing(n); printf("astIdList\n"); 
+				break;
+			case astParam: 
+				spacing(n); printf("astParam\n"); 
+				break;
+			case astAssignment: 
+				spacing(n); printf("astAssignment\n"); 
+				break;
+			case astExpr: 
+				spacing(n); printf("astExpr\n"); 
+				break;
+			case astArr: 
+				spacing(n); printf("astArr\n"); 
+				break;
+			case astData: 
+				spacing(n); printf("astData\n"); 
+				break;
+			case astInt: 
+				spacing(n); printf("astInt\n"); 
+				break;
+			case astBool: 
+				spacing(n); printf("astBool\n"); 
+				break;
+			case astStr: 
+				spacing(n); printf("astStr\n"); 
+				break;
+			case astDouble: 
+				spacing(n); printf("astDouble\n"); 
+				break;
+			case astVoid: 
+				spacing(n); printf("astVoid\n"); 
+				break;
+			case astAdd: 
+				spacing(n); printf("astAdd\n"); 
+				break;
+			case astSub: 
+				spacing(n); printf("astSub\n"); 
+				break;
+			case astMul: 
+				spacing(n); printf("astMul\n"); 
+				break;
+			case astDiv: 
+				spacing(n); printf("astDiv\n"); 
+				break;
+			case astLte:
+				spacing(n); printf("astLte\n"); 
+				break;
+			case astGte:
+				spacing(n); printf("astGte\n"); 
+				break;
+			case astLt:
+				spacing(n); printf("astLt\n"); 
+				break;
+			case astGt: 
+				spacing(n); printf("astGt\n"); 
+				break;
+			case astEq: 
+				spacing(n); printf("astEq\n"); 
+				break;
+			case astNeq: 
+				spacing(n); printf("astNeq\n"); 
+				break;
+			case astAnd: 
+				spacing(n); printf("astAnd\n");
+				break;
+			case astOr: 
+				spacing(n); printf("astOr\n"); 
+				break;
+			case astXor: 
+				spacing(n); printf("astXor\n"); 
+				break;
+			case astIntConst: 
+				spacing(n); printf("astIntConst\n"); 
+				break;
+			case astStrConst: 
+				spacing(n); printf("astStrConst\n"); 
+				break;
+			case astBoolConst: 
+				spacing(n); printf("astBoolConst\n"); 
+				break;
+			case astFloatConst: 
+				spacing(n); printf("astFloatConst\n"); 
+				break;
+      case astId:
+        spacing(n); printf("astId\n"); 
+				break;
+			default: 
+				printf("AGNOSTO=%d\n",p->node_type);
+		}
+		for(i=0; i<4; i++) traverse(p->child_node[i],n);
+	}
+}
