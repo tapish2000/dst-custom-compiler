@@ -1,4 +1,5 @@
 start {
-  array <integer, 5> arr;
-
+  integer a is 6;
+  integer b is 4;
+  integer c is a-b;
 }

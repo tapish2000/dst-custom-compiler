@@ -5,6 +5,7 @@ y.tab.c
 l
 p
 myparser
+myparser.exe
 y.output
 Compiler/AssemblyCode.asm
 Compiler/AssemblyData.asm

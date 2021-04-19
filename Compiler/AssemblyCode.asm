@@ -15,16 +15,14 @@ _source_start:
     addiu $sp,$sp,-32
     sw $fp,28($sp)
     move $fp,$sp
-li $2, 1, 
-sw $2, 12($fp), 
-li $2, 2, 
-sw $2, 16($fp), 
-li $2, 3, 
-sw $2, 20($fp), 
-li $2, 4, 
-sw $2, 24($fp), 
-li $2, 5, 
-sw $2, 28($fp), 
+    li  $2, 6
+    sw  $2, 8($fp)
+	lw $2 8($fp)
+	li $3 7
+	li $2 0
+    jmp  EndIf0
+    Else0:
+    EndIf0:
     move $2,$0
     move $sp,$fp
     lw $fp,28($sp)
