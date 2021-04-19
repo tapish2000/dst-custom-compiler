@@ -649,6 +649,73 @@ void processExpr(struct Ast_node *p, int level) {
 			break;
 		}
 	}
+	else if(strcmp(op->name,"astMul")==0){
+		sym->value.ivalue = lhs->value.ivalue * val->value.ivalue;
+		sym->asmclass = 'r';
+		int l;
+		int r;
+		switch (lhs->asmclass){
+			case 'm':
+				l = freeregister();
+				fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
+				registers[l-2] = 1;
+				lhs->reg = l;
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						registers[r-2] = 1;
+						val->reg = r;
+						fprintf(asmCode, "    mult $%d, $%d\n",l,r);
+						fprintf(asmCode, "    mflo $%d\n",r);
+						sym->reg = r;
+					break;
+					case 'c':
+						r = freeregister();
+						fprintf(asmCode, "    li $%d, %d\n",r, val->value.ivalue);
+						registers[r-2] = 1;
+						fprintf(asmCode, "    mult $%d, $%d\n",l,r);
+						fprintf(asmCode, "    mflo $%d\n",r);
+						sym->reg = r;
+					break;
+					case 'r':
+					// No idea if this case is possible.
+						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+					break;
+					case 's':
+						printf("IMPOSSIBLE ('m'-'s')\n");
+					break;
+				}	
+			break;
+			case 'c':
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						registers[r-2] = 1;
+						val->reg = r;
+						l = freeregister();
+						fprintf(asmCode, "    li $%d, %d\n",l, val->value.ivalue);
+						fprintf(asmCode, "    mult $%d, $%d\n",l,r);
+						fprintf(asmCode, "    mflo $%d\n",r);
+						sym->reg = r;
+					break;
+					case 'c':
+						sym->value.ivalue = lhs->value.ivalue * val->value.ivalue;
+						sym->asmclass='c';
+					break;
+					case 'r':
+					// No idea if this case is possible
+						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
+						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+					break;
+					case 's':
+						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
+					break;
+				}
+			break;
+		}
+	}
 	// printf("Checking Operator type : %s\n",p->child_node[1]->symbol_node->asmclass);
 	printf("----> %d\n",sym->value.ivalue);
 	pushV(sym);
@@ -699,22 +766,17 @@ void processId(struct Ast_node *p) {
 }
 
 /* For handling addition */
-void processAdd(struct Ast_node *p, int level){
-	// pop 2 values from stack
-	// evaluate them
-	// push them back into stack as it is value of expression ?
-	// struct Symbol* lhs = popV(); // Expression
-	// struct Symbol* val = popV(); // Term
-	// printf("%s -- %s\n",lhs->value.ivalue,rhs->value.ivalue);
+void processAdd(struct Ast_node *p){
 	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
 	// set its lavalue and class
-
-	//explicitly handling Addition for integers
-	// new->value.ivalue = lhs->value.ivalue + rhs->value.ivalue;
 	strcpy(new->name,"astAdd");
 	pushV(new);
+}
 
-	
+void processMul(struct Ast_node* p){
+	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
+	strcpy(new->name,"astMul");
+	pushV(new);
 }
 
 /************ Initializer of asm files ****************/
@@ -870,13 +932,13 @@ void generateCode(struct Ast_node *p, int level) {
             
             break;
         case astAdd:
-            processAdd(p,level);
+            processAdd(p);
             break;
         case astSub: 
             
             break;
         case astMul:
-            
+            processMul(p);
             break;
         case astDiv: 
             
