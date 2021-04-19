@@ -10,7 +10,7 @@ void default_value(int type);
 struct Ast_node* astroot;
 char name[20];
 int type, size, no_of_elements, no_of_params, no_of_args, error_code = 0;
-int int_stack_index = 0;
+int_stack_index = 0;
 char tag;
 struct Symbol *sym, *s1, *s2;
 struct Symbol *currmethod;
@@ -249,7 +249,6 @@ assign_stmt:                      data_type ID assignment
                                   }
                                   | arr assignment
                                   {
-                                    $$ = makeNode(astArrayAssignStmt, NULL, $1, $2, NULL, NULL);
                                     s1 = popV();
                                     s2 = popV();
                                     if(s1->type == 4 || s2->type == 4) {
@@ -259,6 +258,7 @@ assign_stmt:                      data_type ID assignment
                                       printf("Error! LHS and RHS of assignment are not of matching data types\n");
                                       error_code = 1;
                                     }
+                                    $$ = makeNode(astArrayAssignStmt, s2, $1, $2, NULL, NULL);
                                   };
 
 loop:                             LOOP 
@@ -307,7 +307,9 @@ else_stmt:                        ELSE '{' stmts_list '}'
 conditions:                       boolean 
                                   {
                                     $$ = $1;
+                                    printf("In Condition boolean1\n");
                                     s1 = popV();
+                                    printf("In Condition boolean2\n");
                                     if(s1->type == 2 || s1->type == 4) {
                                       printf("Error! Type of %s not compatible for boolean operations\n", s1->name);
                                       error_code = 1;
@@ -348,7 +350,6 @@ conditions:                       boolean
 
 boolean:                          boolean  rel_op  expr 
                                   {
-                                    $$ = makeNode(astBoolean, NULL, $1, $2, $3, NULL);
                                     s1 = popV();
                                     s2 = popV();
                                     if(s1->type == 2 || s1->type == 4) {
@@ -367,10 +368,13 @@ boolean:                          boolean  rel_op  expr
                                       type = 0;
                                       size = 4;
                                     }
-                                    pushV(makeSymbol("", type, &value, size, 'c', 0, 0));
+                                    sym=makeSymbol("", type, &value, size, 'c', 0, 0);
+                                    pushV(sym);
+                                    $$ = makeNode(astBoolean, sym, $1, $2, $3, NULL);
                                   }
                                   | expr 
                                   {
+                                    printf("Boolean Expression1\n");
                                     $$ = $1;
                                   };
 
@@ -385,26 +389,29 @@ return_stmt:                      RET expr
 
 array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_assign 
                                   {
-                                    s1 = vs[vtop-no_of_elements];
-                                    printf("\n%d %d\n",$5, no_of_elements);
-                                    if($5 != no_of_elements) {
-                                      printf("Error! Number of elements declared and assigned are not matching\n");
-                                      error_code = 1;
-                                    }
-                                    for(int i=0; i<no_of_elements; i++) {
-                                      s2 = popV();
-                                      printf("%d\n",s1->value.ivalue);
-                                      if(s1->type != s2->type) {
-                                        printf("Error! Type of the array and the element are not matching\n");
+                                    s1 = vs[vtop];
+                                    if(s1 != NULL) {
+                                      s1 = vs[vtop-no_of_elements];
+                                      printf("\n%d %d\n",$5, no_of_elements);
+                                      if($5 != no_of_elements) {
+                                        printf("Error! Number of elements declared and assigned are not matching\n");
+                                        error_code = 1;
                                       }
-                                    }
-                                    s1 = popV();
-                                    default_value(s1->type);
-                                    sym = makeSymbol($7, s2->type, &value, $5*4, 'a', $5, 0);
-                                    add_variable_to_table(sym);
-                                    sym->asm_location = 8 + int_stack_index*4;
-                                    int_stack_index += no_of_elements;
-                                    $$ = makeNode(astArrayDecl, sym, $3, $8, NULL, NULL);
+                                      for(int i=0; i<no_of_elements; i++) {
+                                        s2 = popV();
+                                        printf("%d\n",s1->value.ivalue);
+                                        if(s1->type != s2->type) {
+                                          printf("Error! Type of the array and the element are not matching\n");
+                                        }
+                                      }
+                                    } else {popV();}
+                                      s1 = popV();
+                                      default_value(s1->type);
+                                      sym = makeSymbol($7, s2->type, &value, $5*4, 'a', $5, 0);
+                                      add_variable_to_table(sym);
+                                      sym->asm_location = 8 + int_stack_index*4;
+                                      int_stack_index += no_of_elements;
+                                      $$ = makeNode(astArrayDecl, sym, $3, $8, NULL, NULL);
                                   };
 
 func_call:                        func_type '(' args_list ')' 
@@ -518,6 +525,7 @@ array_assign:                     ASSIGN '[' id_list ']'
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
+                                    pushV(NULL);
                                   };
 
 id_list:                          id_list ',' constant 
@@ -556,7 +564,6 @@ assignment:                       ASSIGN expr
 expr:                             expr op value 
                                   {
                                     printf("expr1\n");
-                                    $$ = makeNode(astExpr, NULL, $1, $2, $3, NULL);
                                     s1 = popV();
                                     s2 = popV();
                                     if(s1->type == 2|| s1->type == 4) {
@@ -591,6 +598,7 @@ expr:                             expr op value
                                     }
                                     sym = makeSymbol("", type, &value, size, 'c', 0, 0);
                                     pushV(sym);
+                                    $$ = makeNode(astExpr, sym, $1, $2, $3, NULL);
                                   }
                                   | value
                                   {
@@ -613,8 +621,7 @@ value:                            func_call
                                   }; 
 
 arr:                              ID '[' data ']' 
-                                  {
-                                    $$ = makeNode(astArr, NULL, $1, $3, NULL, NULL);
+                                 {
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
@@ -623,10 +630,10 @@ arr:                              ID '[' data ']'
                                     }
                                     s1 = popV();
                                     pushV(sym);
+                                    $$ = makeNode(astArr, sym, $3, NULL, NULL, NULL);
                                   }
                                   | ID 
                                   {
-                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
@@ -634,19 +641,17 @@ arr:                              ID '[' data ']'
                                       error_code = 1;
                                     }
                                     pushV(sym);
+                                    $$ = makeNode(astId, sym, NULL, NULL, NULL, NULL);
                                   }; 
 
 data:                             INT_CONST 
                                   {
-                                    $$ = makeNode(astData, NULL, NULL, NULL, NULL, NULL);
                                     value.ivalue = $1;
                                     sym = makeSymbol("INT_CONST", 0, &value, 4, 'c', 1, 0);
-                                    pushV(sym);
+                                    $$ = makeNode(astData, sym, NULL, NULL, NULL, NULL);
                                   }
                                   | ID
                                   {
-                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
-                                    $$ = makeNode(astId, NULL, NULL, NULL, NULL, NULL);
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
@@ -654,6 +659,7 @@ data:                             INT_CONST
                                       error_code = 1;
                                     }
                                     pushV(sym);
+                                    $$ = makeNode(astId, sym, NULL, NULL, NULL, NULL);
                                   }; 
 
 data_type:                        INT 
@@ -909,14 +915,14 @@ void ShowVStack(){
 void pushV(struct Symbol *p)
 {
    vs[++vtop]=p;
-   printf("\nPush\n");
-   ShowVStack();
+  //  printf("\nPush\n");
+  //  ShowVStack();
 }
 
 struct Symbol *popV()
 { 
-   printf("\nPop\n");
-   ShowVStack();
+  //  printf("\nPop\n");
+  //  ShowVStack();
    return(vs[vtop--]);
 }
 
