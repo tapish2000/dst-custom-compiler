@@ -75,6 +75,7 @@ void processBreak() {
 
 void processContinue(struct Ast_node *p) {
     // Will need to find out a way to write asm for continue
+	fprintf(asmCode, "    jmp  While%d\n", top_while()->value.ivalue);
 } 
 
 void processAssignStmt(struct Ast_node *p, int level) {
@@ -253,7 +254,7 @@ void processConditional(struct Ast_node *p, int level) {
 	printf("ConditionalCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Conditions for if condition or boolean called directly
 	lhs = popV();
-	printf("-- %d %c --\n",lhs->type,lhs->asmclass);
+	printf("-- %s %d %c --\n",lhs->name,lhs->type,lhs->asmclass);
 	int temp_ifs = 0;
 	if(p->child_node[2]!=NULL) {
 		switch (lhs->type){
@@ -562,13 +563,11 @@ void processAssignment(struct Ast_node *p, int level) {
 }
 
 void processExpr(struct Ast_node *p, int level) {
-	printf("ExprCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Expression
-	printf("ExprCheck2\n");
-	generateCode(p->child_node[1], level + 1);	// Operator
-	printf("ExprCheck3\n");
 	generateCode(p->child_node[2], level + 1);	// Value
-	printf("ExprCheck4\n");
+	generateCode(p->child_node[1], level + 1);	// Operator
+	struct Symbol* sym = popV();
+	printf("----> %d ",sym->value.ivalue);
 }
 
 void processArr(struct Ast_node *p, int level) {
@@ -613,7 +612,20 @@ void processId(struct Ast_node *p) {
 	// Not clear what to write here, to be discussed
 }
 
+/* For handling addition */
+void processAdd(struct Ast_node *p, int level){
+	// pop 2 values from stack
+	// evaluate them
+	// push them back into stack as it is value of expression ?
+	struct Symbol* lhs = popV(); // Expression
+	struct Symbol* rhs = popV(); // Term
+	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
+	// set its lavalue and class
 
+	//explicitly handling Addition for integers
+	new->value.ivalue = lhs->value.ivalue + rhs->value.ivalue;
+	pushV(new);
+}
 
 /************ Initializer of asm files ****************/
 void enterInitCode() {
@@ -768,7 +780,7 @@ void generateCode(struct Ast_node *p, int level) {
             
             break;
         case astAdd:
-            
+            processAdd(p,level);
             break;
         case astSub: 
             

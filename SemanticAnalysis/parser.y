@@ -211,7 +211,7 @@ withoutSemcol:                    loop
                                     $$ = $1;
                                   };
 
-assign_stmt:                      param assignment 
+assign_stmt:                      param assignment // i is 0
                                   {
                                     printf("assign_stmt\n");
                                     $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
