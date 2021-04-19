@@ -88,6 +88,7 @@ struct Symbol {
   char asmclass;                      /* m-Memory, r-Register, c-Constant, s-Stack */
   // int *param_list;                    /* List of parameters of a function */ 
   // int *arr_elements;                  /* Elements in an array */
+  int asm_location;
   int is_param;                       /* 1 - parameter or 0 - not a parameter  */
   struct Hash_Table *symbol_table;     /* Pointer to the symbol table if it is a method */
 
@@ -137,3 +138,7 @@ struct Symbol *popV();
 void ShowRStack();
 void pushR(struct Symbol *p);
 struct Symbol *popR();
+void enqueue(struct Symbol* sym);
+struct Symbol* dequeue();
+void display();
+
