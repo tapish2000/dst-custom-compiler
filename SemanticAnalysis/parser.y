@@ -269,27 +269,9 @@ loop:                             LOOP
                                     pop_while();
                                   };
 
-conditional:                      IF '(' conditions ')' '{' stmts_list '}' remain_cond
+conditional:                      IF '(' conditions ')' '{' stmts_list '}' else_stmt
                                   {
                                     $$ = makeNode(astConditional, NULL, $3, $6, $8, NULL);
-                                  };
-
-remain_cond:                      elif_stmts else_stmt 
-                                  {
-                                    $$ = makeNode(astRemaiCond, NULL, $1, $2, NULL, NULL);
-                                  }
-                                  | /* EMPTY */ 
-                                  {
-                                    $$ = NULL;
-                                  };
-
-elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_list '}' 
-                                  {
-                                    $$ = makeNode(astElifStmts, NULL, $1, $4, $7, NULL);
-                                  }
-                                  | ELIF '(' conditions ')' '{' stmts_list '}'
-                                  {
-                                    $$ = makeNode(astElifStmt, NULL, $3, $6, NULL, NULL);
                                   };
 
 else_stmt:                        ELSE '{' stmts_list '}' 
@@ -311,6 +293,7 @@ conditions:                       boolean
                                       printf("Error! Type of %s not compatible for boolean operations\n", s1->name);
                                       error_code = 1;
                                     }
+                                    pushV(s1);
                                   }
                                   | boolean bi_logic_cond conditions 
                                   {
