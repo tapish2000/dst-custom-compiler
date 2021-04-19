@@ -1,6 +1,5 @@
 start {
   integer a is 6;
-  if(a equals 7){
-    integer b is 7;
-  }
+  integer b is 4;
+  integer c is a-b;
 }
