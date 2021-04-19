@@ -109,7 +109,7 @@ struct Ast_node {
 };
 
 /* ----------------------- Function Prototypes -------------------------*/
-
+int int_stack_index;
 void Initialize_Tables();
 void Print_Tables();
 
@@ -139,3 +139,6 @@ struct Symbol *popV();
 void ShowRStack();
 void pushR(struct Symbol *p);
 struct Symbol *popR();
+void enqueue(struct Symbol* sym);
+struct Symbol* dequeue();
+void display();

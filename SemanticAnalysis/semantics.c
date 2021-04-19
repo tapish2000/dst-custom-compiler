@@ -11,6 +11,9 @@ FILE* asmData; // for asm data
 extern struct Ast_node *astroot; // root of the tree
 extern FILE * yyin;
 
+struct Symbol* iq[30];
+int start=0, end=0;
+
 int num_ifs = 0;
 int num_whiles = 0;
 int param_bytes = 8;
@@ -28,7 +31,7 @@ int freeregister(){
 }
 
 void processProgram(struct Ast_node *p, int level) {
-	int offset_bytes = -8;
+	int offset_bytes = -(8+int_stack_index*4);
 	if (p->child_node[0]) {
 		generateCode(p->child_node[0], level + 1);  // Functions
 	}
@@ -130,15 +133,71 @@ void processAssignStmt(struct Ast_node *p, int level) {
 	// strcpy(rhs->name,lhs->name);
 	// rhs->type = lhs->type;
 	// rhs->asm_location = lhs->asm_location;
-	lhs->value.ivalue = rhs->value.ivalue;
+	lhs->value.ivalue = rhs->value.ivalue;void processIntConst(struct Ast_node *p) {
+	p->symbol_node->asmclass = 'c';
+	pushV(p->symbol_node);
+	printf("processIntConst - %d\n", p->node_type);
+	p->symbol_node->asmclass = 'c';
+	// push_vs(p->symbol_node);
+}
 	pushV(lhs);
 }
 
 void processArrayAssignStmt(struct Ast_node *p, int level) {
+	struct Symbol *lhs, *data, *rhs;
     generateCode(p->child_node[0], level + 1);  // Array
     generateCode(p->child_node[1], level + 1);  // Assignment
+	rhs = popV();
+	data = popV();
+	lhs = popV();
+	int fr = freeregister();
+	switch(lhs->type) {
+		case 0:
+			switch(rhs->type) {
+				case 0:
+					switch(rhs->asmclass) {						
+						case 'm':
+							if(lhs->tag == 'a') {
+								fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr, rhs->asm_location);
+								fprintf(asmCode, "    sw  $%d, $%d($fp)\n",fr, (data->value.ivalue*4+(lhs->asm_location)));
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+							else if(lhs->tag == 'v') {
+								fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr,rhs->asm_location);
+								fprintf(asmCode, "    sw  $%d, $%d($fp)\n",fr, lhs->asm_location);
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+						break;
+						case 'c':
+							if(lhs->tag == 'a') {
+								fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
+								fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, (data->value.ivalue*4+(lhs->asm_location)));
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+							else if(lhs->tag == 'v') {
+								fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
+								fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, lhs->asm_location);
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+						break;
+						case 'r':
+							// fprintf(asmCode, "    lw  $2, [REG_INT]\n");
+						break;
+						case 's':
+							printf("IMPOSSIBLE (LOCATION=STACK)");
+						break;
+					}	
+					// fprintf(asmCode, "    mov  dword [%s], eax\n", lhs->MIXname);
+				break;
+			}
+		break;
+	}	
+	pushV(rhs);
 }
-
 void processLoop(struct Ast_node *p, int level) {
     struct Symbol *lhs;
     struct Symbol *while_symbol;
@@ -890,10 +949,22 @@ void processReturnStmt(struct Ast_node *p, int level) {
 }
 
 void processArrayDecl(struct Ast_node *p, int level) {
+	struct Symbol *sym_node, *lhs, *rhs;
 	generateCode(p->child_node[0], level + 1);	// Array Type
-	generateCode(p->child_node[1], level + 1);	// Data
-	generateCode(p->child_node[2], level + 1);	// Array Assignment
-} 
+	generateCode(p->child_node[1], level + 1);	// Array Assignment
+	//generateCode(p->child_node[2], level + 1);	// Array Assignment
+	lhs = p->symbol_node;
+	int fr = freeregister();
+	int l = lhs->asm_location;
+	printf("%d\n",int_stack_index);
+	for(int i=0; i<lhs->no_elements; i++) {
+		//rhs = rs[index_stack] ; //= //vs[]; //Variable stack access  // Check
+		fprintf(asmCode, "li $%d, %d, \n", fr, dequeue()->value.ivalue);
+		fprintf(asmCode, "sw $%d, %d($fp), \n", fr, l);
+		l = l+4;
+		param_bytes += 4;
+	}
+}
 
 
 void processArrayType(struct Ast_node *p, int level) {
@@ -1169,6 +1240,7 @@ void processIntConst(struct Ast_node *p) {
 	pushV(p->symbol_node);
 	printf("processIntConst - %d\n", p->node_type);
 	p->symbol_node->asmclass = 'c';
+	enqueue(p->symbol_node);
 	// push_vs(p->symbol_node);
 }
 
@@ -1254,6 +1326,27 @@ void processSub(struct Ast_node* p){
 	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
 	strcpy(new->name,"astSub");
 	pushV(new);
+}
+
+void enqueue(struct Symbol* sym) {
+	printf("Vaish: %d \n", sym->value.ivalue);
+	if(end==30) {
+		end = 0;
+	}
+	iq[end++] = sym;
+	display();
+}
+struct Symbol* dequeue() {
+	if(start==30) {
+		start = 0;
+	}
+	return iq[start++];
+}
+void display() {
+	for(int i=0; i<30; i++) {
+		if(iq[i]!=NULL)
+			printf("%d %d \n", i, iq[i]->value.ivalue);
+	}		
 }
 
 /************ Initializer of asm files ****************/

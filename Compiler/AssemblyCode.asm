@@ -12,8 +12,8 @@ _main:
 ; ----------------------- ;
 
 _source_start:
-    addiu $sp,$sp,-8
-    sw $fp,4($sp)
+    addiu $sp,$sp,-32
+    sw $fp,28($sp)
     move $fp,$sp
     li  $2, 6
     sw  $2, 8($fp)
@@ -25,7 +25,7 @@ _source_start:
     EndIf0:
     move $2,$0
     move $sp,$fp
-    lw $fp,4($sp)
-    addiu $sp,$sp,8
+    lw $fp,28($sp)
+    addiu $sp,$sp,32
     j $31
 nop
