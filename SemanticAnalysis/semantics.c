@@ -11,6 +11,9 @@ FILE* asmData; // for asm data
 extern struct Ast_node *astroot; // root of the tree
 extern FILE * yyin;
 
+struct Symbol* iq[30];
+int start=0, end=0;
+
 int num_ifs = 0;
 int num_loops = 0;
 int param_bytes = 8;
@@ -28,7 +31,7 @@ int freeregister(){
 }
 
 void processProgram(struct Ast_node *p, int level) {
-	int offset_bytes = -8;
+	int offset_bytes = -(8+int_stack_index*4);
 	if (p->child_node[0]) {
 		generateCode(p->child_node[0], level + 1);  // Functions
 	}
@@ -135,10 +138,60 @@ void processAssignStmt(struct Ast_node *p, int level) {
 }
 
 void processArrayAssignStmt(struct Ast_node *p, int level) {
+	struct Symbol *lhs, *data, *rhs;
     generateCode(p->child_node[0], level + 1);  // Array
     generateCode(p->child_node[1], level + 1);  // Assignment
+	rhs = popV();
+	data = popV();
+	lhs = popV();
+	int fr = freeregister();
+	switch(lhs->type) {
+		case 0:
+			switch(rhs->type) {
+				case 0:
+					switch(rhs->asmclass) {						
+						case 'm':
+							if(lhs->tag == 'a') {
+								fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr, rhs->asm_location);
+								fprintf(asmCode, "    sw  $%d, $%d($fp)\n",fr, (data->value.ivalue*4+(lhs->asm_location)));
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+							else if(lhs->tag == 'v') {
+								fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr,rhs->asm_location);
+								fprintf(asmCode, "    sw  $%d, $%d($fp)\n",fr, lhs->asm_location);
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+						break;
+						case 'c':
+							if(lhs->tag == 'a') {
+								fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
+								fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, (data->value.ivalue*4+(lhs->asm_location)));
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+							else if(lhs->tag == 'v') {
+								fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
+								fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, lhs->asm_location);
+								param_bytes += 4;
+								lhs->asm_location = param_bytes;
+							}
+						break;
+						case 'r':
+							// fprintf(asmCode, "    lw  $2, [REG_INT]\n");
+						break;
+						case 's':
+							printf("IMPOSSIBLE (LOCATION=STACK)");
+						break;
+					}	
+					// fprintf(asmCode, "    mov  dword [%s], eax\n", lhs->MIXname);
+				break;
+			}
+		break;
+	}	
+	pushV(rhs);
 }
-
 void processLoop(struct Ast_node *p, int level) {
     struct Symbol *lhs;
     struct Symbol *while_symbol;
@@ -161,99 +214,20 @@ void processLoop(struct Ast_node *p, int level) {
 } 
 
 void processConditional(struct Ast_node *p, int level) {
+	num_ifs++;
+	int temp = num_ifs;
 	struct Symbol* lhs;
-	printf("ConditionalCheck1\n");
 	generateCode(p->child_node[0], level + 1);	// Conditions for if condition or boolean called directly
 	lhs = popV();
-	printf("-- %s %d %c --\n",lhs->name,lhs->type,lhs->asmclass);
-	int temp_ifs = 0;
-	if(p->child_node[2]!=NULL) {
-		switch (lhs->type){
-			// Integer type
-			case 0:
-				switch (lhs->asmclass){
-					case 'm':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'r':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   EndIf%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'c':
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 's':
-						printf("\nStack call not possible for if statement\n");
-						break;
-				}
-				break;
-			// Double Type
-			case 1:
-				break;
-			// String Type
-			case 2:
-				break;
-			// Boolean Type
-			case 3:
-				break;
-			default:
-				break;
-		}
+	if(lhs->value.ivalue == 0){
+		fprintf(asmCode,"	beq $%d $0 endif%d\n",lhs->reg,temp);
 	}else{
-		switch (lhs->type){
-			// Integer type
-			case 0:
-				switch (lhs->asmclass){
-					case 'm':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [%s]\n",lhs->asm_name);
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   Else%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'r':
-						num_ifs++;
-						temp_ifs = num_ifs;
-						fprintf(asmCode, "    mov  ecx, [REG_INT]\n");
-						fprintf(asmCode, "    cmp  ecx, 0\n");
-						fprintf(asmCode, "    je   Else%d\n", temp_ifs);
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 'c':
-						generateCode(p->child_node[1], level + 1);	// Statements List for if condition
-						break;
-					case 's':
-						printf("\nStack call not possible for if statement\n");
-						break;
-				}
-				break;
-			// Double Type
-			case 1:
-				break;
-			// String Type
-			case 2:
-				break;
-			// Boolean Type
-			case 3:
-				break;
-			default:
-				break;
-		}
-		fprintf(asmCode, "    jmp  EndIf%d\n", temp_ifs);
-		fprintf(asmCode, "    Else%d:\n", temp_ifs);
-		generateCode(p->child_node[2], level + 1);	// Remaining Conditions
+		fprintf(asmCode,"	bne $%d $0 endelse%d\n",lhs->reg,temp);
 	}
-	fprintf(asmCode, "    EndIf%d:\n", temp_ifs); // Ending the if caluse
+	generateCode(p->child_node[1], level + 1); // statements list
+	fprintf(asmCode,"	endif%d:\n",temp);
+	generateCode(p->child_node[2], level + 1); // remaining conditions
+	fprintf(asmCode,"	endelse%d:\n",temp);
 }
 
 void processRemaiCond(struct Ast_node *p, int level) {
@@ -784,10 +758,22 @@ void processReturnStmt(struct Ast_node *p, int level) {
 }
 
 void processArrayDecl(struct Ast_node *p, int level) {
+	struct Symbol *sym_node, *lhs, *rhs;
 	generateCode(p->child_node[0], level + 1);	// Array Type
-	generateCode(p->child_node[1], level + 1);	// Data
-	generateCode(p->child_node[2], level + 1);	// Array Assignment
-} 
+	generateCode(p->child_node[1], level + 1);	// Array Assignment
+	//generateCode(p->child_node[2], level + 1);	// Array Assignment
+	lhs = p->symbol_node;
+	int fr = freeregister();
+	int l = lhs->asm_location;
+	printf("%d\n",int_stack_index);
+	for(int i=0; i<lhs->no_elements; i++) {
+		//rhs = rs[index_stack] ; //= //vs[]; //Variable stack access  // Check
+		fprintf(asmCode, "li $%d, %d, \n", fr, dequeue()->value.ivalue);
+		fprintf(asmCode, "sw $%d, %d($fp), \n", fr, l);
+		l = l+4;
+		param_bytes += 4;
+	}
+}
 
 
 void processArrayType(struct Ast_node *p, int level) {
@@ -1063,6 +1049,7 @@ void processIntConst(struct Ast_node *p) {
 	pushV(p->symbol_node);
 	// printf("processIntConst - %d\n", p->node_type);
 	p->symbol_node->asmclass = 'c';
+	enqueue(p->symbol_node);
 	// push_vs(p->symbol_node);
 }
 
@@ -1148,6 +1135,49 @@ void processSub(struct Ast_node* p){
 	struct Symbol* new = (struct Symbol *)malloc(sizeof(struct Symbol));
 	strcpy(new->name,"astSub");
 	pushV(new);
+}
+
+void enqueue(struct Symbol* sym) {
+	printf("Vaish: %d \n", sym->value.ivalue);
+	if(end==30) {
+		end = 0;
+	}
+	iq[end++] = sym;
+	display();
+}
+struct Symbol* dequeue() {
+	if(start==30) {
+		start = 0;
+	}
+	return iq[start++];
+}
+void display() {
+	for(int i=0; i<30; i++) {
+		if(iq[i]!=NULL)
+			printf("%d %d \n", i, iq[i]->value.ivalue);
+	}		
+}
+
+/************ Initializer of asm files ****************/
+void enterInitCode() {
+    fprintf(asmData, "section .data\n\n");
+	fprintf(asmData, "cw dw 057fH\n");
+	fprintf(asmData, "integer_1 dd 1\n");
+	fprintf(asmData, "REG_INT  dd 0\n");
+	fprintf(asmData, "REG_REAL dq 0.0\n");
+	fprintf(asmData, "format_read_int db \"%%d\", 0\n");
+	fprintf(asmData, "format_read_char db \"%%c\", 0\n");
+	fprintf(asmData, "format_read_real db \"%%lf\", 0\n");
+	fprintf(asmCode, "\nsection .text\n\n");
+	fprintf(asmCode, "extern _printf\n");
+	fprintf(asmCode, "extern _scanf\n");
+	fprintf(asmCode, "global _main\n");
+	fprintf(asmCode, "_main:\n");
+	fprintf(asmCode, "    fldcw [cw]\n");
+	fprintf(asmCode, "    call _source_start\n");
+	fprintf(asmCode, "    ret\n");
+	
+	fprintf(asmCode, "\n; ----------------------- ;\n\n");
 }
 
 
@@ -1548,7 +1578,7 @@ void traverse(struct Ast_node *p, int n)
 				spacing(n); printf("astId\n"); 
 				break;
 			default: 
-				printf("AGNOSTO=%d\n",p->node_type);
+				printf("Not Found = %d\n",p->node_type);
 		}
 		for(i=0; i<4; i++) traverse(p->child_node[i],n);
 	}

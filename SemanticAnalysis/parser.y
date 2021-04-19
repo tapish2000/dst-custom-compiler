@@ -9,7 +9,8 @@ void default_value(int type);
 
 struct Ast_node* astroot;
 char name[20];
-int type, size, no_elements, no_of_params, no_of_args, error_code = 0;
+int type, size, no_of_elements, no_of_params, no_of_args, error_code = 0;
+int int_stack_index = 0;
 char tag;
 struct Symbol *sym, *s1, *s2;
 struct Symbol *currmethod;
@@ -55,7 +56,7 @@ struct Symbol *curMethod = NULL;
 %type <node> stmts_list stmt withSemcol withoutSemcol
 %type <node> array_decl return_stmt func_call func_type
 %type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
-%type <node> expr array_assign array_type assign_stmt assignment args_list args id_list
+%type <node> expr array_assign assign_stmt assignment args_list args id_list
 %type <node> data constant arr value
 
 %%
@@ -195,10 +196,24 @@ withSemcol:                       param
                                   }
                                   | BREAK 
                                   {
+                                    s1 = pop_while();
+                                    if(s1) {
+                                      push_while(makeSymbol("loop", 4, &value, 0, 0, 0, 0));
+                                    } else {
+                                      printf("ERROR! Break must be in a while loop\n");
+                                      exit(1);
+                                    }                        
                                     $$ = makeNode(astBreak, NULL, NULL, NULL, NULL, NULL);
                                   }
                                   | CONT 
                                   {
+                                    s1 = pop_while();
+                                    if(s1) {
+                                      push_while(makeSymbol("loop", 4, &value, 0, 0, 0, 0));
+                                    } else {
+                                      printf("ERROR! Continue must be in a while loop\n");
+                                      exit(1);
+                                    }   
                                     $$ = makeNode(astContinue, NULL, NULL, NULL, NULL, NULL);
                                   };
                                   
@@ -211,28 +226,47 @@ withoutSemcol:                    loop
                                     $$ = $1;
                                   };
 
-assign_stmt:                      param assignment
+assign_stmt:                      param assignment 
                                   {
                                     printf("assign_stmt\n");
-                                    $$ = makeNode(astAssignStmt, NULL, $1, $2, NULL, NULL);
-                                    popV();
-                                    popV();
-                                    // sym = find_variable(param->)
+                                    s1 = popV();
+                                    s2 = popV();
+                                    sym = NULL;
+                                    if(s1->type == 4 || s2->type == 4) {
+                                      printf("Error! No assignment for void types\n");
+                                      error_code = 1;
+                                    } else if(s1->type != s2->type) {
+                                      printf("Error! LHS and RHS of assignment are not of matching data types\n");
+                                      error_code = 1;
+                                    } else {
+                                      sym = makeSymbol(s2->name, s2->type, &value, s2->size, 'v', 1, 0);
+                                    }
+                                    $$ = makeNode(astAssignStmt, sym, $1, $2, NULL, NULL);
+
                                   }
                                   | arr assignment
                                   {
-                                    $$ = makeNode(astArrayAssignStmt, NULL, $1, $2, NULL, NULL);
                                     s1 = popV();
                                     s2 = popV();
                                     if(s1->type == 4 || s2->type == 4) {
                                       printf("Error! No assignment for void types\n");
                                       error_code = 1;
+                                    } else if(s1->type != s2->type) {
+                                      printf("Error! LHS and RHS of assignment are not of matching data types\n");
+                                      error_code = 1;
                                     }
+                                    $$ = makeNode(astArrayAssignStmt, s2, $1, $2, NULL, NULL);
                                   };
 
-loop:                             LOOP '(' conditions ')' '{' stmts_list '}'
+loop:                             LOOP 
                                   {
-                                    $$ = makeNode(astLoop, NULL, $3, $6, NULL, NULL);
+                                    sym = makeSymbol("loop", 4, &value, 0, 0, 0, 0);
+                                    push_while(sym);
+                                  }
+                                  '(' conditions ')' '{' stmts_list '}'
+                                  {
+                                    $$ = makeNode(astLoop, NULL, $4, $7, NULL, NULL);
+                                    pop_while();
                                   };
 
 conditional:                      IF '(' conditions ')' '{' stmts_list '}' remain_cond
@@ -350,23 +384,31 @@ return_stmt:                      RET expr
                                     popV();
                                   };
 
-array_decl:                       ARR '<' array_type ',' data '>' ID array_assign 
+array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_assign 
                                   {
-                                    $$ = makeNode(astArrayDecl, NULL, $3, $5, $8, NULL);
-                                    s1 = popV();
-                                    default_value(s1->type);
-                                    sym = makeSymbol($7, s1->type, &value, s1->size, 'a', 0, 0);
-                                    add_variable_to_table(sym);
-                                    pushV(sym);
-                                  };
-
-array_type:                       data_type 
-                                  {
-                                    $$ = $1;
-                                  }
-                                  | ARR '<' array_type ',' data '>'
-                                  {
-                                    $$ = makeNode(astArrayType, NULL, $3, $5, NULL, NULL);
+                                    s1 = vs[vtop];
+                                    if(s1 != NULL) {
+                                      s1 = vs[vtop-no_of_elements];
+                                      printf("\n%d %d\n",$5, no_of_elements);
+                                      if($5 != no_of_elements) {
+                                        printf("Error! Number of elements declared and assigned are not matching\n");
+                                        error_code = 1;
+                                      }
+                                      for(int i=0; i<no_of_elements; i++) {
+                                        s2 = popV();
+                                        printf("%d\n",s1->value.ivalue);
+                                        if(s1->type != s2->type) {
+                                          printf("Error! Type of the array and the element are not matching\n");
+                                        }
+                                      }
+                                    } else {popV();}
+                                      s1 = popV();
+                                      default_value(s1->type);
+                                      sym = makeSymbol($7, s2->type, &value, $5*4, 'a', $5, 0);
+                                      add_variable_to_table(sym);
+                                      sym->asm_location = 8 + int_stack_index*4;
+                                      int_stack_index += no_of_elements;
+                                      $$ = makeNode(astArrayDecl, sym, $3, $8, NULL, NULL);
                                   };
 
 func_call:                        func_type '(' args_list ')' 
@@ -480,15 +522,20 @@ array_assign:                     ASSIGN '[' id_list ']'
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
+                                    pushV(NULL);
                                   };
 
 id_list:                          id_list ',' constant 
                                   {
                                     $$ = makeNode(astIdList, NULL, $1, $3, NULL, NULL);
+                                    no_of_elements++;
+                                    printf("Hey\n");
                                   }
                                   | constant 
                                   {
                                     $$ = $1;
+                                    no_of_elements = 1;
+                                    printf("Bye\n");
                                   };
 
 param:                            data_type ID 
@@ -500,8 +547,10 @@ param:                            data_type ID
                                     sym = makeSymbol($2, s1->type, &value, s1->size, 'v', 1, 0);
                                     add_variable_to_table(sym);
                                     pushV(sym);
+                                    sym->asm_location = 8 + int_stack_index*4;
+                                    int_stack_index++;
                                     $$ = makeNode(astParam, sym, $1, NULL, NULL, NULL);
-                                  };
+                                  }
 
 assignment:                       ASSIGN expr 
                                   {
@@ -565,28 +614,30 @@ value:                            func_call
                                   }
                                   | arr
                                   {
-                                    printf("value array\n");
                                     $$ = $1;
                                   }; 
 
-arr:                              arr '[' data ']' 
+arr:                              ID '[' data ']' 
                                   {
-                                    sym = $1->symbol_node;
-                                    sym->value = popV()->value;
-                                    $$ = makeNode(astArr, sym, $1, $3, NULL, NULL);
-                                  }
-                                  | ID 
-                                  {
-                                    printf("Array ID\n");
                                     sym = NULL;
-                                    sym = find_variable($1);
+                                    sym = find_variable($1); 
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
-                                    else {
-                                      pushV(sym);
+                                    s1 = popV();
+                                    pushV(sym);
+                                    $$ = makeNode(astArr, sym, $3, NULL, NULL, NULL);
+                                  }
+                                  | ID 
+                                  {
+                                    sym = NULL;
+                                    sym = find_variable($1); 
+                                    if(sym==NULL) {
+                                      printf("Error! Variable %s is not declared\n", $1);
+                                      error_code = 1;
                                     }
+                                    pushV(sym);
                                     $$ = makeNode(astId, sym, NULL, NULL, NULL, NULL);
                                   }; 
 
@@ -604,6 +655,7 @@ data:                             INT_CONST
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
+                                    pushV(sym);
                                     $$ = makeNode(astId, sym, NULL, NULL, NULL, NULL);
                                   }; 
 
@@ -852,7 +904,7 @@ void Print_Tables(){
 void ShowVStack(){
 	printf("\n--- VARIABLE STACK ---\n");
 	for (int i=vtop; i>=0; i--){
-		printf("%s %s %d %d\n", vs[i]->name, vs[i]->func_name, vs[i]->type, vtop);
+		printf("%s %s %d %d %d\n", vs[i]->name, vs[i]->func_name, vs[i]->value.ivalue, vs[i]->type, vtop);
 	}
 	printf("--- END ---\n");
 }
@@ -941,7 +993,7 @@ void Init_While_Stack() {
 void Show_While_Stack() {
 	printf("\n--- WHILE STACK ---\n");
 	for (int i = whileTop; i >= 0; i--) {
-		printf("%d\n", while_stack[i]->value.ivalue);
+		printf("%s\n", while_stack[i]->name);
 	}
 	printf("--- END ---\n");
 }
@@ -1029,7 +1081,7 @@ void add_method_to_table(struct Symbol *symbp)
   struct Symbol *exists, *newme;
 
   newme=symbp;
-   
+  
 	exists=find_method(newme->func_name);
 	if( !exists )
 	{
