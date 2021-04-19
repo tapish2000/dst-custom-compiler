@@ -1,7 +1,0 @@
-start {
-  integer i is 0;
-  loopif (i <= 5) {
-    i is i + 1;
-  }
-}
-
