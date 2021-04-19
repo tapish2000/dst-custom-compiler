@@ -256,7 +256,7 @@ elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_l
                                   | ELIF '(' conditions ')' '{' stmts_list '}'
                                   {
                                     $$ = makeNode(astElifStmt, NULL, $3, $6, NULL, NULL);
-                                  }
+                                  };
 
 else_stmt:                        ELSE '{' stmts_list '}' 
                                   {
