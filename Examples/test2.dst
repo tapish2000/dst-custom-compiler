@@ -1,5 +1,8 @@
 start {
-  integer a is 6;
-  integer b is 4;
-  integer c is a + b;
+  integer a is 10;
+  if(a < 7){
+    integer b is a + 2;
+  }else{
+    integer c is a + 2;
+  }
 }

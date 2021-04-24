@@ -99,6 +99,7 @@ void processAssignStmt(struct Ast_node *p, int level) {
     generateCode(p->child_node[1], level + 1);  // Assignment
 	rhs = popV();
 	printf("Assignment value : %d\n", rhs->value.ivalue);
+	int l = freeregister();
 	switch (lhs->type){
 		case 0:
 			switch (rhs->type){
@@ -106,19 +107,20 @@ void processAssignStmt(struct Ast_node *p, int level) {
 					switch (rhs->asmclass){						
 						case 'm':		
 							// fprintf(asmCode, "    mov  eax, [%s]\n", rhs->MIXname);
-							fprintf(asmCode, "    lw  $2, $%d($fp)\n",rhs->asm_location);
-							fprintf(asmCode, "    sw  $2, $%d($fp)\n",param_bytes);
+							fprintf(asmCode, "    lw  $%d, $%d($fp)\n",l,rhs->asm_location);
+							fprintf(asmCode, "    sw  $%d, $%d($fp)\n",l,param_bytes);
 							lhs->asm_location = param_bytes;
 							param_bytes += 4;
 						break;
 						case 'c':
-							fprintf(asmCode, "    li  $2, %d\n", rhs->value.ivalue);
-							fprintf(asmCode, "    sw  $2, %d($fp)\n", param_bytes);
+							fprintf(asmCode, "    li  $%d, %d\n",l, rhs->value.ivalue);
+							fprintf(asmCode, "    sw  $%d, %d($fp)\n", l,param_bytes);
 							lhs->asm_location = param_bytes;
 							param_bytes += 4;
 						break;
 						case 'r':
 							fprintf(asmCode, "    sw $%d, %d($fp)\n",rhs->reg,param_bytes);
+							registers[rhs->reg -2] = 0;
 							lhs->asm_location = param_bytes;
 							param_bytes += 4;
 						break;
@@ -131,9 +133,6 @@ void processAssignStmt(struct Ast_node *p, int level) {
 			}
 		break;
 	}	
-	// strcpy(rhs->name,lhs->name);
-	// rhs->type = lhs->type;
-	// rhs->asm_location = lhs->asm_location;
 	lhs->value.ivalue = rhs->value.ivalue;
 	pushV(lhs);
 }
@@ -222,29 +221,12 @@ void processConditional(struct Ast_node *p, int level) {
 	lhs = popV();
 	if(lhs->value.ivalue == 0){
 		fprintf(asmCode,"	beq $%d $0 endif%d\n",lhs->reg,temp);
-	}else{
-		fprintf(asmCode,"	bne $%d $0 endelse%d\n",lhs->reg,temp);
 	}
 	generateCode(p->child_node[1], level + 1); // statements list
+	fprintf(asmCode,"	b endelse%d\n",temp);
 	fprintf(asmCode,"	endif%d:\n",temp);
 	generateCode(p->child_node[2], level + 1); // remaining conditions
 	fprintf(asmCode,"	endelse%d:\n",temp);
-}
-
-void processRemaiCond(struct Ast_node *p, int level) {
-	generateCode(p->child_node[0], level + 1);	// Elif Statements
-	generateCode(p->child_node[1], level + 1);	// Else Statement
-} 
-
-void processElifStmts(struct Ast_node *p, int level) {
-	generateCode(p->child_node[0], level + 1);	// Elif Statements
-	generateCode(p->child_node[1], level + 1);	// Conditions
-	generateCode(p->child_node[2], level + 1);	// Statements List
-} 
-
-void processElifStmt(struct Ast_node *p, int level) {
-	generateCode(p->child_node[0], level + 1);	// Conditions
-	generateCode(p->child_node[1], level + 1);	// Statements List
 }
 
 void processElseStmt(struct Ast_node *p, int level) {
@@ -252,18 +234,47 @@ void processElseStmt(struct Ast_node *p, int level) {
 } 
 
 void processConditions(struct Ast_node *p, int level) {
-	printf("ConditionsCheck1\n");
+	struct Symbol *lhs, *bc, * rhs;
+	struct Symbol *sym = (struct Symbol *)malloc(sizeof(struct Symbol));
+
 	generateCode(p->child_node[0], level + 1);	// Boolean
-	printf("ConditionsCheck2\n");
+	lhs = popV();
 	generateCode(p->child_node[1], level + 1);	// Bi-logic Conditions
-	printf("ConditionsCheck3\n");
+	bc = popV();
 	generateCode(p->child_node[2], level + 1);	// Conditions
-	printf("ConditionsCheck4\n");
-	
+	rhs = popV();
+
+	int l = freeregister();
+	registers[l-2] = 1;
+	int x;
+	if(strcmp(bc->asm_name,"astAnd") == 0){
+		x = rhs->value.ivalue && lhs->value.ivalue;
+		registers[rhs->reg-2] = 0;
+		registers[lhs->reg-2] = 0;
+		fprintf(asmCode,"	li $%d %d\n",l,x);
+	}else if(strcmp(bc->asm_name,"astOr")==0){
+		x = rhs->value.ivalue || lhs->value.ivalue;
+		registers[rhs->reg-2] = 0;
+		registers[lhs->reg-2] = 0;
+		fprintf(asmCode,"	li $%d %d\n",l,x);
+	}else if(strcmp(bc->asm_name,"astXor")==0){
+		x = rhs->value.ivalue ^ lhs->value.ivalue;
+		registers[rhs->reg-2] = 0;
+		registers[lhs->reg-2] = 0;
+		fprintf(asmCode,"	li $%d %d\n",l,x);
+	}
+	sym->reg = l;
+	sym->value.ivalue = x;
+	pushV(sym);
 }
 
 void processNotConditions(struct Ast_node *p, int level) {
+	struct Symbol *lhs;
 	generateCode(p->child_node[0], level + 1);	// Conditions
+	lhs = popV();
+	fprintf(asmCode,"	li $%d %d\n",lhs->reg,!lhs->value.ivalue);
+	lhs->value.ivalue = !lhs->value.ivalue;
+	pushV(lhs);
 }
 
 void processBoolean(struct Ast_node *p, int level) {
@@ -274,7 +285,7 @@ void processBoolean(struct Ast_node *p, int level) {
 	op = popV();
 	generateCode(p->child_node[2], level + 1);	// Expression
 	right = popV();
-	struct Symbol *sym = (struct Symbol *)malloc(sizeof(struct Symbol));;
+	struct Symbol *sym = (struct Symbol *)malloc(sizeof(struct Symbol));
 	int l,r;
 	if(strcmp(op->asm_name,"astLt") == 0){
 		if(left->value.ivalue < right->value.ivalue){
@@ -338,7 +349,7 @@ void processBoolean(struct Ast_node *p, int level) {
 		}
 		fprintf(asmCode,"	slt $%d $%d $%d\n",l,l,r);
 		sym -> reg = l;
-	}else if(strncmp(op->asm_name,"astGt",5) == 0){
+	}else if(strcmp(op->asm_name,"astGt") == 0){
 		if(left->value.ivalue > right->value.ivalue){
 			sym->value.ivalue = 1;
 		}else{
@@ -400,7 +411,7 @@ void processBoolean(struct Ast_node *p, int level) {
 		}
 		fprintf(asmCode,"	slt $%d $%d $%d\n",l,r,l);
 		sym -> reg = l;
-	}else if(strncmp(op->asm_name,"astEq",5) == 0){
+	}else if(strcmp(op->asm_name,"astEq") == 0){
 		if(left->value.ivalue == right->value.ivalue){
 			sym->value.ivalue = 1;
 		}else{
@@ -462,7 +473,7 @@ void processBoolean(struct Ast_node *p, int level) {
 		}
 		fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
 		sym -> reg = l;
-	}else if(strncmp(op->asm_name,"astNeq",6)==0){
+	}else if(strcmp(op->asm_name,"astNeq")==0){
 		if(left->value.ivalue != right->value.ivalue){
 			sym->value.ivalue = 1;
 		}else{
@@ -524,7 +535,7 @@ void processBoolean(struct Ast_node *p, int level) {
 		}
 		fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
 		sym -> reg = l;
-	}else if(strncmp(op->asm_name,"astLte",6) == 0){
+	}else if(strcmp(op->asm_name,"astLte") == 0){
 		if(left->value.ivalue <= right->value.ivalue){
 			sym->value.ivalue = 1;
 		}else{
@@ -584,9 +595,11 @@ void processBoolean(struct Ast_node *p, int level) {
 				}
 				break;
 		}
-		fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
+		fprintf(asmCode,"	addu $%d $%d 1\n",r,r);
+		fprintf(asmCode,"	slt $%d $%d $%d\n",l,l,r);
+		// fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
 		sym -> reg = l;
-	}else if(strncmp(op->asm_name,"astGte",6) == 0){
+	}else if(strcmp(op->asm_name,"astGte") == 0){
 		if(left->value.ivalue >= right->value.ivalue){
 			sym->value.ivalue = 1;
 		}else{
@@ -646,7 +659,9 @@ void processBoolean(struct Ast_node *p, int level) {
 				}
 				break;
 		}
-		fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
+		fprintf(asmCode,"	addu $%d $%d -1\n",r,r);
+		fprintf(asmCode,"	slt $%d $%d $%d\n",l,r,l);
+		// fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
 		sym -> reg = l;
 	}
 	pushV(sym);
@@ -1073,12 +1088,8 @@ void processFloatConst(struct Ast_node *p) {
 }
 
 void processId(struct Ast_node *p) {
-	struct Symbol* t = popV();
-	t->asmclass = 'm';
-	// sym->asmclass = 'm'; 
-	pushV(t);
-	// printf("Checking %d----->\n",t->value.ivalue);
-	// Not clear what to write here, to be discussed
+	p->symbol_node->asmclass = 'm';
+	pushV(p->symbol_node);
 }
 
 void processLte(struct Ast_node *p) {
@@ -1114,7 +1125,24 @@ void processGt(struct Ast_node *p) {
 void processLt(struct Ast_node *p) {
 	struct Symbol* sym = (struct Symbol *)malloc(sizeof(struct Symbol));
 	strcpy(sym->asm_name,"astLt");
-	printf("%s",sym->asm_name);
+	pushV(sym);
+}
+
+void processAnd(struct Ast_node *p) {
+	struct Symbol* sym = (struct Symbol *)malloc(sizeof(struct Symbol));
+	strcpy(sym->asm_name,"astAnd");
+	pushV(sym);
+}
+
+void processOr(struct Ast_node *p) {
+	struct Symbol* sym = (struct Symbol *)malloc(sizeof(struct Symbol));
+	strcpy(sym->asm_name,"astOr");
+	pushV(sym);
+}
+
+void processXor(struct Ast_node *p) {
+	struct Symbol* sym = (struct Symbol *)malloc(sizeof(struct Symbol));
+	strcpy(sym->asm_name,"astXor");
 	pushV(sym);
 }
 
@@ -1230,15 +1258,15 @@ void generateCode(struct Ast_node *p, int level) {
         case astConditional:
             processConditional(p, level); 
             break;   
-        case astRemaiCond:
-            processRemaiCond(p, level);
-            break;
-        case astElifStmts:
-            processElifStmts(p, level);
-            break;
-		case astElifStmt:
-			processElifStmt(p, level);
-			break;
+        // case astRemaiCond:
+        //     processRemaiCond(p, level);
+        //     break;
+        // case astElifStmts:
+        //     processElifStmts(p, level);
+        //     break;
+		// case astElifStmt:
+		// 	processElifStmt(p, level);
+		// 	break;
         case astElseStmt:
             processElseStmt(p, level);
             break;
@@ -1342,13 +1370,13 @@ void generateCode(struct Ast_node *p, int level) {
             processNeq(p);
             break;
         case astAnd:
-            
+            processAnd(p);
             break;
         case astOr:
-            
+            processOr(p);
             break;
         case astXor:
-            
+            processXor(p);
             break;
         case astIntConst:
             processIntConst(p);
