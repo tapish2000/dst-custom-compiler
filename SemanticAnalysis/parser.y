@@ -10,7 +10,7 @@ void default_value(int type);
 struct Ast_node* astroot;
 char name[20];
 int type, size, no_of_elements, no_of_params, no_of_args, error_code = 0;
-int_stack_index = 0;
+int int_stack_index = 0;
 char tag;
 struct Symbol *sym, *s1, *s2;
 struct Symbol *currmethod;
@@ -55,7 +55,7 @@ struct Symbol *curMethod = NULL;
 %type <node> program functions function function_name data_type params param_list param
 %type <node> stmts_list stmt withSemcol withoutSemcol
 %type <node> array_decl return_stmt func_call func_type
-%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
+%type <node> loop conditional conditions else_stmt boolean bi_logic_cond rel_op op
 %type <node> expr array_assign assign_stmt assignment args_list args id_list
 %type <node> data constant arr value
 
@@ -238,10 +238,11 @@ assign_stmt:                      param assignment
                                     } else if(s1->type != s2->type) {
                                       printf("Error! LHS and RHS of assignment are not of matching data types\n");
                                       error_code = 1;
-                                    } 
-                                    else {  
-                                      sym = makeSymbol(s2->name, s2->type, &value, s2->size, 'v', 1, 0); }  
+                                    } else {
+                                      sym = makeSymbol(s2->name, s2->type, &value, s2->size, 'v', 1, 0);
+                                    }
                                     $$ = makeNode(astAssignStmt, sym, $1, $2, NULL, NULL);
+
                                   }
                                   | arr assignment
                                   {
@@ -268,27 +269,9 @@ loop:                             LOOP
                                     pop_while();
                                   };
 
-conditional:                      IF '(' conditions ')' '{' stmts_list '}' remain_cond
+conditional:                      IF '(' conditions ')' '{' stmts_list '}' else_stmt
                                   {
                                     $$ = makeNode(astConditional, NULL, $3, $6, $8, NULL);
-                                  };
-
-remain_cond:                      elif_stmts else_stmt 
-                                  {
-                                    $$ = makeNode(astRemaiCond, NULL, $1, $2, NULL, NULL);
-                                  }
-                                  | /* EMPTY */ 
-                                  {
-                                    $$ = NULL;
-                                  };
-
-elif_stmts:                       elif_stmts ELIF '(' conditions ')' '{' stmts_list '}' 
-                                  {
-                                    $$ = makeNode(astElifStmts, NULL, $1, $4, $7, NULL);
-                                  }
-                                  | ELIF '(' conditions ')' '{' stmts_list '}'
-                                  {
-                                    $$ = makeNode(astElifStmt, NULL, $3, $6, NULL, NULL);
                                   };
 
 else_stmt:                        ELSE '{' stmts_list '}' 
@@ -310,6 +293,7 @@ conditions:                       boolean
                                       printf("Error! Type of %s not compatible for boolean operations\n", s1->name);
                                       error_code = 1;
                                     }
+                                    pushV(s1);
                                   }
                                   | boolean bi_logic_cond conditions 
                                   {
@@ -552,9 +536,8 @@ param:                            data_type ID
                                     pushV(sym);
                                     sym->asm_location = 8 + int_stack_index*4;
                                     int_stack_index++;
-                                    printf("-----------------%d %s %d--------------------------\n", int_stack_index, $2, sym->asm_location);
                                     $$ = makeNode(astParam, sym, $1, NULL, NULL, NULL);
-                                  };
+                                  }
 
 assignment:                       ASSIGN expr 
                                   {
@@ -621,8 +604,8 @@ value:                            func_call
                                     $$ = $1;
                                   }; 
 
-arr:                              ID '[' data ']' 
-                                 {
+arr:                              ID '[' expr ']' 
+                                  {
                                     sym = NULL;
                                     sym = find_variable($1); 
                                     if(sym==NULL) {
@@ -630,6 +613,9 @@ arr:                              ID '[' data ']'
                                       error_code = 1;
                                     }
                                     s1 = popV();
+                                    if(s1->type != 0) {
+                                      printf("Error! Expression for index array is not of integer type\n");
+                                    }
                                     pushV(sym);
                                     $$ = makeNode(astArr, sym, $3, NULL, NULL, NULL);
                                   }
@@ -1086,7 +1072,7 @@ void add_method_to_table(struct Symbol *symbp)
   struct Symbol *exists, *newme;
 
   newme=symbp;
-   
+  
 	exists=find_method(newme->func_name);
 	if( !exists )
 	{
