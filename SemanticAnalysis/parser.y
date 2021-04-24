@@ -226,7 +226,7 @@ withoutSemcol:                    loop
                                     $$ = $1;
                                   };
 
-assign_stmt:                      data_type ID assignment 
+assign_stmt:                      param assignment 
                                   {
                                     printf("assign_stmt\n");
                                     s1 = popV();
@@ -238,14 +238,10 @@ assign_stmt:                      data_type ID assignment
                                     } else if(s1->type != s2->type) {
                                       printf("Error! LHS and RHS of assignment are not of matching data types\n");
                                       error_code = 1;
-                                    } else {
-                                      sym = makeSymbol($2, s2->type, &value, s2->size, 'v', 1, 0);
-                                      add_variable_to_table(sym);
-                                      sym->asm_location = 8 + int_stack_index*4;
-                                      int_stack_index++;
-                                    }
+                                    } 
+                                    else {  
+                                      sym = makeSymbol(s2->name, s2->type, &value, s2->size, 'v', 1, 0); }  
                                     $$ = makeNode(astAssignStmt, sym, $1, $2, NULL, NULL);
-
                                   }
                                   | arr assignment
                                   {
@@ -390,7 +386,7 @@ return_stmt:                      RET expr
 array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_assign 
                                   {
                                     s1 = vs[vtop];
-                                    if(s1 != NULL) {
+                                    if(s1->type != 4) {
                                       s1 = vs[vtop-no_of_elements];
                                       printf("\n%d %d\n",$5, no_of_elements);
                                       if($5 != no_of_elements) {
@@ -404,13 +400,16 @@ array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_a
                                           printf("Error! Type of the array and the element are not matching\n");
                                         }
                                       }
-                                    } else {popV();}
+                                    }
+                                    else {
+                                        popV();
+                                      }
                                       s1 = popV();
                                       default_value(s1->type);
-                                      sym = makeSymbol($7, s2->type, &value, $5*4, 'a', $5, 0);
+                                      sym = makeSymbol($7, s1->type, &value, $5*4, 'a', $5, 0);
                                       add_variable_to_table(sym);
                                       sym->asm_location = 8 + int_stack_index*4;
-                                      int_stack_index += no_of_elements;
+                                      int_stack_index += $5;
                                       $$ = makeNode(astArrayDecl, sym, $3, $8, NULL, NULL);
                                   };
 
@@ -525,7 +524,8 @@ array_assign:                     ASSIGN '[' id_list ']'
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
-                                    pushV(NULL);
+                                    no_of_elements = 0;
+                                    pushV(makeSymbol("", 4, &value, 0, 'v', 0, 0));
                                   };
 
 id_list:                          id_list ',' constant 
@@ -552,8 +552,9 @@ param:                            data_type ID
                                     pushV(sym);
                                     sym->asm_location = 8 + int_stack_index*4;
                                     int_stack_index++;
+                                    printf("-----------------%d %s %d--------------------------\n", int_stack_index, $2, sym->asm_location);
                                     $$ = makeNode(astParam, sym, $1, NULL, NULL, NULL);
-                                  }
+                                  };
 
 assignment:                       ASSIGN expr 
                                   {
@@ -647,8 +648,8 @@ arr:                              ID '[' data ']'
 data:                             INT_CONST 
                                   {
                                     value.ivalue = $1;
-                                    sym = makeSymbol("INT_CONST", 0, &value, 4, 'c', 1, 0);
-                                    $$ = makeNode(astData, sym, NULL, NULL, NULL, NULL);
+                                    sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
+                                    $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
                                   }
                                   | ID
                                   {
@@ -1040,7 +1041,8 @@ struct Symbol * makeSymbol(char *name, int type, union Value* value, int size,ch
       ptr->value.ivalue = value->ivalue;
       break;
     default:
-      printf("Incompatible Data Type!\n");
+      //printf("Incompatible Data Type!\n");
+      ptr->value.ivalue = 0;
       break;
   }
   printf("3\n");

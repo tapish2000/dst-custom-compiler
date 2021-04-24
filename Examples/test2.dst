@@ -1,5 +1,9 @@
 start {
-  integer a is 6;
-  integer b is 4;
-  integer c is a-b;
+  array <integer, 5> a;
+  integer b;
+  integer c;
+  b is 1;
+  c is 2;
+  a[0] is b + c;
 }
+

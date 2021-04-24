@@ -12,20 +12,20 @@ _main:
 ; ----------------------- ;
 
 _source_start:
-    addiu $sp,$sp,-32
-    sw $fp,28($sp)
+    addiu $sp,$sp,-36
+    sw $fp,32($sp)
     move $fp,$sp
-    li  $2, 6
+    li  $2, 1
+    sw  $2, 28($fp)
+    li  $2, 2
+    sw  $2, 32($fp)
+    lw $2, 28($fp)
+    lw $3, 32($fp)
+    addu $2, $3, $2
     sw  $2, 8($fp)
-	lw $2 8($fp)
-	li $3 7
-	li $2 0
-    jmp  EndIf0
-    Else0:
-    EndIf0:
     move $2,$0
     move $sp,$fp
-    lw $fp,28($sp)
-    addiu $sp,$sp,32
+    lw $fp,32($sp)
+    addiu $sp,$sp,36
     j $31
 nop
