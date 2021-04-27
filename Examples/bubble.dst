@@ -1,0 +1,20 @@
+start{
+    array arr<integer,5> is {5,2,3,1,4};
+    integer i is 0;
+    loopif(i<5){
+        intger j is 0;
+        loopif(j<5-i-1){
+            if(arr[j]>arr[j+1]){
+                integer t is arr[j+1];
+                arr[j+1] is arr[j];
+                arr[j] is t;
+            }
+            j is j+1;
+        }
+        i is i+1;
+    }
+    i is 0;
+    loopif(i<5){
+        show(arr[i]);
+    }
+}

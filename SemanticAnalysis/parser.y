@@ -449,36 +449,22 @@ func_call:                        func_type '(' args_list ')'
                                       pushV(sym);
                                     }
                                     else {
-                                      for(int i=0; i<=no_of_args; i++)
+                                      int i;
+                                      for(i=0; i<no_of_args; i++){
                                         popV();
+                                      }
+                                      sym = popV();
+                                      sym->no_of_params = no_of_args;
                                     }
                                   };
 
-func_type:                        FUNC_ID 
+func_type:                        SHOW 
                                   {
-                                    $$ = makeNode(astCustomFunc, NULL, NULL, NULL, NULL, NULL);
-                                    sym = NULL;
-                                    sym = find_method($1);
-                                    if(sym==NULL) {
-                                      printf("Error! Function %s is not declared\n", $1);
-                                      error_code = 1;
-                                    }
-                                    pushV(sym);
-                                  }
-                                  | SHOW 
-                                  {
-                                    $$ = makeNode(astFuncShow, NULL, NULL, NULL, NULL, NULL);
                                     default_value(0);
                                     sym = makeSymbol("show",4,&value,0,'f',0,0);
                                     pushV(sym);
+                                    $$ = makeNode(astFuncShow, sym, NULL, NULL, NULL, NULL);
                                   }
-                                  | TAKE
-                                  {
-                                    $$ = makeNode(astFuncTake, NULL, NULL, NULL, NULL, NULL);
-                                    default_value(0);
-                                    sym = makeSymbol("take",4,&value,0,'f',0,0);
-                                    pushV(sym);
-                                  };
 
 args_list:                        args 
                                   {
@@ -911,6 +897,10 @@ struct Symbol *popV()
   //  printf("\nPop\n");
   //  ShowVStack();
    return(vs[vtop--]);
+}
+
+struct Symbol* reverse_pop(){
+
 }
 
 //Return Stack

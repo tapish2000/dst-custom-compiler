@@ -1,6 +1,5 @@
 start {
-  array <integer, 5> a;
-  integer i;
-  integer j;
-  a[i+1] is i;
+  integer a is 5;
+  integer b is 6;
+  show(a,5);
 }

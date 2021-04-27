@@ -267,9 +267,9 @@ void processConditional(struct Ast_node *p, int level) {
 	}
 	generateCode(p->child_node[1], level + 1); // statements list
 	fprintf(asmCode,"	b endelse%d\n",temp);
-	fprintf(asmCode,"	endif%d:\n",temp);
+	fprintf(asmCode,"endif%d:\n",temp);
 	generateCode(p->child_node[2], level + 1); // remaining conditions
-	fprintf(asmCode,"	endelse%d:\n",temp);
+	fprintf(asmCode,"endelse%d:\n",temp);
 }
 
 void processElseStmt(struct Ast_node *p, int level) {
@@ -843,8 +843,39 @@ void processArrayType(struct Ast_node *p, int level) {
 }
 
 void processFuncCall(struct Ast_node *p, int level) {
-	generateCode(p->child_node[0], level + 1);	// Function Type
+	generateCode(p->child_node[0], level + 1);	// Function Type - Show
+	struct Symbol* sym = popV();
 	generateCode(p->child_node[1], level + 1);	// Arguments List
+	int i;
+	struct Symbol* argsList[SYM_TABLE_SIZE];
+	// reverse popping
+	printf("------------check1------------\n");
+	for(i=sym->no_of_params-1;i>=0;i--){
+		argsList[i] = popV();
+	}
+	printf("-------------check2-----------\n");
+	for(i=0;i<sym->no_of_params;i++){
+		if(argsList[i]->asmclass=='c'){ // constant value printing
+			fprintf(asmCode,"    li $a0, %d\n",argsList[i]->value.ivalue);
+			fprintf(asmCode,"    li $v0, 1\n");
+			fprintf(asmCode,"    syscall\n");
+		}
+		else if(argsList[i]->asmclass=='m'){
+			if(argsList[i]->tag=='v'){ // variable printing
+				fprintf(asmCode,"    lw $a0, %d($fp)\n",argsList[i]->asm_location);
+				fprintf(asmCode,"    li $v0, 1\n");
+				fprintf(asmCode,"    syscall\n");
+			}else if(argsList[i]->tag=='a'){ // array access and printing
+				fprintf(asmCode,"    lw $a0, %d($fp)\n",argsList[i]->asm_location);
+				fprintf(asmCode,"    li $v0, 1\n");
+				fprintf(asmCode,"    syscall\n");
+			}
+		}
+		// for newline printing;
+		fprintf(asmCode,"    li $v0, 4\n");
+		fprintf(asmCode,"    li $a0, newline\n");
+		fprintf(asmCode,"    syscall\n");
+	}
 }
 
 void processCustomFunc(struct Ast_node *p) {
@@ -852,7 +883,7 @@ void processCustomFunc(struct Ast_node *p) {
 }
 
 void processFuncShow(struct Ast_node *p) {
-
+	pushV(p->symbol_node);
 } 
 
 void processFuncTake(struct Ast_node *p) {
@@ -1231,24 +1262,9 @@ void display() {
 
 /************ Initializer of asm files ****************/
 void enterInitCode() {
-    fprintf(asmData, "section .data\n\n");
-	fprintf(asmData, "cw dw 057fH\n");
-	fprintf(asmData, "integer_1 dd 1\n");
-	fprintf(asmData, "REG_INT  dd 0\n");
-	fprintf(asmData, "REG_REAL dq 0.0\n");
-	fprintf(asmData, "format_read_int db \"%%d\", 0\n");
-	fprintf(asmData, "format_read_char db \"%%c\", 0\n");
-	fprintf(asmData, "format_read_real db \"%%lf\", 0\n");
-	fprintf(asmCode, "\nsection .text\n\n");
-	fprintf(asmCode, "extern _printf\n");
-	fprintf(asmCode, "extern _scanf\n");
-	fprintf(asmCode, "global _main\n");
-	fprintf(asmCode, "_main:\n");
-	fprintf(asmCode, "    fldcw [cw]\n");
-	fprintf(asmCode, "    call _source_start\n");
-	fprintf(asmCode, "    ret\n");
-	
-	fprintf(asmCode, "\n; ----------------------- ;\n\n");
+    fprintf(asmCode,".data\n");
+	fprintf(asmCode,"newline:  .asciiz \"\\n\"\n");
+	fprintf(asmCode,".text\n");
 }
 
 
@@ -1460,6 +1476,7 @@ void main(int argc, char *argv[]) {
     asmData = fopen("./Compiler/AssemblyData.asm", "w+");
     asmCode = fopen("./Compiler/AssemblyCode.asm", "w+");
 
+	enterInitCode();
     if (astroot->node_type != astEmptyProgram) {
         generateCode(astroot, 0);
     }
