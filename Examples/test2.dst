@@ -1,5 +1,5 @@
 start {
-  integer a is 5;
+  array<integer,5> a is [1,2,3,4,5];
   integer b is 6;
-  show(a,5);
+  integer c is a[0] + b;
 }
