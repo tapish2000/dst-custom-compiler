@@ -1,5 +1,7 @@
 start {
-  array<integer,3> arr is [1,2,3];
-  integer c is 6;
-  integer b is arr[2] + c;
+  array <integer, 5> a is [1,2,3,4,5];
+  integer c;
+  integer b is 6;
+  c is a[2] + b;
+  c is b + a[3];
 }

@@ -575,7 +575,7 @@ expr:                             expr op value
                                   | value
                                   {
                                     printf("expr2\n");
-                                    $$ = makeNode(astExpr, NULL, $1, NULL, NULL, NULL);
+                                    $$ = $1;
                                   };
 
 value:                            func_call 
