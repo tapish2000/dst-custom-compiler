@@ -28,6 +28,8 @@ struct Symbol *rs[30];
 int vtop = -1;
 struct Symbol *vs[30];
 
+
+
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
 
@@ -573,7 +575,7 @@ expr:                             expr op value
                                   | value
                                   {
                                     printf("expr2\n");
-                                    $$ = makeNode(astValue,NULL,$1,NULL,NULL,NULL);
+                                    $$ = makeNode(astExpr, NULL, $1, NULL, NULL, NULL);
                                   };
 
 value:                            func_call 
@@ -594,6 +596,7 @@ arr:                              ID '[' expr ']'
                                   {
                                     sym = NULL;
                                     sym = find_variable($1); 
+                                    sym->asmclass = 'm';
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
