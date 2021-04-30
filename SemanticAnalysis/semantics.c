@@ -835,7 +835,7 @@ void processArrayDecl(struct Ast_node *p, int level) {
 			l = l+4;
 			param_bytes += 4;
 		}
-		registers[fr-2] = 1;
+		registers[fr-2] = 0;
 	}
 }
 

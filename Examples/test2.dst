@@ -1,4 +1,7 @@
 start {
-  array <integer, 5> a;
-  a[3] is 1000;
+  array <integer, 5> a is [1,2,3,4,5];
+  integer c;
+  integer b is 6;
+  c is 1 + b;
+  c is b + 2;
 }
