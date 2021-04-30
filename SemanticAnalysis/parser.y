@@ -28,6 +28,8 @@ struct Symbol *rs[30];
 int vtop = -1;
 struct Symbol *vs[30];
 
+
+
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
 
@@ -449,36 +451,22 @@ func_call:                        func_type '(' args_list ')'
                                       pushV(sym);
                                     }
                                     else {
-                                      for(int i=0; i<=no_of_args; i++)
+                                      int i;
+                                      for(i=0; i<no_of_args; i++){
                                         popV();
+                                      }
+                                      sym = popV();
+                                      sym->no_of_params = no_of_args;
                                     }
                                   };
 
-func_type:                        FUNC_ID 
+func_type:                        SHOW 
                                   {
-                                    $$ = makeNode(astCustomFunc, NULL, NULL, NULL, NULL, NULL);
-                                    sym = NULL;
-                                    sym = find_method($1);
-                                    if(sym==NULL) {
-                                      printf("Error! Function %s is not declared\n", $1);
-                                      error_code = 1;
-                                    }
-                                    pushV(sym);
-                                  }
-                                  | SHOW 
-                                  {
-                                    $$ = makeNode(astFuncShow, NULL, NULL, NULL, NULL, NULL);
                                     default_value(0);
                                     sym = makeSymbol("show",4,&value,0,'f',0,0);
                                     pushV(sym);
+                                    $$ = makeNode(astFuncShow, sym, NULL, NULL, NULL, NULL);
                                   }
-                                  | TAKE
-                                  {
-                                    $$ = makeNode(astFuncTake, NULL, NULL, NULL, NULL, NULL);
-                                    default_value(0);
-                                    sym = makeSymbol("take",4,&value,0,'f',0,0);
-                                    pushV(sym);
-                                  };
 
 args_list:                        args 
                                   {
@@ -588,7 +576,8 @@ expr:                             expr op value
                                   | value
                                   {
                                     printf("expr2\n");
-                                    $$ = $1;
+                                    sym = vs[vtop];
+                                    $$ = makeNode(astValue, sym, $1, NULL, NULL, NULL);
                                   };
 
 value:                            func_call 
@@ -609,6 +598,7 @@ arr:                              ID '[' expr ']'
                                   {
                                     sym = NULL;
                                     sym = find_variable($1); 
+                                    sym->asmclass = 'm';
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
@@ -912,6 +902,10 @@ struct Symbol *popV()
   //  printf("\nPop\n");
   //  ShowVStack();
    return(vs[vtop--]);
+}
+
+struct Symbol* reverse_pop(){
+
 }
 
 //Return Stack

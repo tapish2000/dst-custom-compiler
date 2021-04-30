@@ -107,22 +107,22 @@ void processAssignStmt(struct Ast_node *p, int level) {
 					switch (rhs->asmclass){						
 						case 'm':		
 							// fprintf(asmCode, "    mov  eax, [%s]\n", rhs->MIXname);
-							fprintf(asmCode, "    lw  $%d, $%d($fp)\n",l,rhs->asm_location);
-							fprintf(asmCode, "    sw  $%d, $%d($fp)\n",l,param_bytes);
-							lhs->asm_location = param_bytes;
-							param_bytes += 4;
+							fprintf(asmCode, "    lw  $%d, %d($fp)\n",l,rhs->asm_location);
+							fprintf(asmCode, "    sw  $%d, %d($fp)\n",l,lhs->asm_location);
+							//lhs->asm_location = param_bytes;
+							//param_bytes += 4;
 						break;
 						case 'c':
 							fprintf(asmCode, "    li  $%d, %d\n",l, rhs->value.ivalue);
-							fprintf(asmCode, "    sw  $%d, %d($fp)\n", l,param_bytes);
-							lhs->asm_location = param_bytes;
-							param_bytes += 4;
+							fprintf(asmCode, "    sw  $%d, %d($fp)\n", l,lhs->asm_location);
+							//lhs->asm_location = param_bytes;
+							//param_bytes += 4;
 						break;
 						case 'r':
-							fprintf(asmCode, "    sw $%d, %d($fp)\n",rhs->reg,param_bytes);
+							fprintf(asmCode, "    sw $%d, %d($fp)\n",rhs->reg,lhs->asm_location);
 							registers[rhs->reg -2] = 0;
-							lhs->asm_location = param_bytes;
-							param_bytes += 4;
+							//lhs->asm_location = param_bytes;
+							//param_bytes += 4;
 						break;
 						case 's':
 							printf("IMPOSSIBLE (LOCATION=STACK)");
@@ -139,102 +139,44 @@ void processAssignStmt(struct Ast_node *p, int level) {
 }
 
 void processArrayAssignStmt(struct Ast_node *p, int level) { 
-	//arr[1] = expr; arr[a] = expr; b = expr;
+	// struct Symbol *sym = (struct Symbol*)malloc(sizeof(struct Symbol));
 	struct Symbol *lhs, *data, *rhs;
     generateCode(p->child_node[0], level + 1);  // Array
     generateCode(p->child_node[1], level + 1);  // Assignment
-
+	printf("-------Hey------\n");
+	ShowVStack();
+	rhs = popV();
+	lhs = popV();
+	int fr=freeregister();
 	if(p->child_node[0]->node_type == astArr) {
-		printf("-------------------\n");
-		ShowVStack();
-	    rhs = popV();
-		lhs = popV();
-		data = popV();
-		int fr=freeregister(), fr1=freeregister();
-		registers[fr-2] = 1;
-		registers[fr1-2] = 1;
+		data = popV(); 
 		switch(lhs->type) {
-		case 0:
-				switch(rhs->type) {
-					case 0: //arr[0] is 1+2
-						switch(rhs->asmclass) {
-							case 'm':
-								if(data->asmclass == 'm') {   // data is memory(variable), rhs is memory(variable)
-									fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr, rhs->asm_location);
-									fprintf(asmCode, "    lw  $%d, %d($fp)\n", fr1, data->asm_location);
-									fprintf(asmCode, "    sll  $%d, $%d, 2\n", fr1, fr1);
-									fprintf(asmCode, "    add  $%d, $%d, $fp\n", fr1, fr1);
-									fprintf(asmCode, "    sw  $%d, %d($%d)\n", fr, lhs->asm_location, fr1); }
-								else if(data->asmclass == 'c') {	// data is constant, rhs is memory(variable)
-									fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr, rhs->asm_location);
-									fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, (data->value.ivalue*4+(lhs->asm_location))); }
-								else if(data->asmclass == 'r') {   // data is register, rhs is memory(variable) //a[j+1] = b
-									fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr, rhs->asm_location);
-									fprintf(asmCode, "    sll  $%d, $%d, 2\n", fr, fr);
-									fprintf(asmCode, " 	  add $%d, $%d, $fp\n", data->reg, data->reg);
-									fprintf(asmCode, "    sw $%d, %d($%d)\n", fr, lhs->asm_location, data->reg);
-								}
-								break;       
-							case 'c':
-								if(data->asmclass == 'm') {   // data is memory(variable), rhs is constant
-									fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
-									fprintf(asmCode, "    lw  $%d, %d($fp)\n", fr1, data->asm_location);
-									fprintf(asmCode, "    sll  $%d, $%d, 2\n", fr1, fr1);
-									fprintf(asmCode, "    add  $%d, $%d, $fp\n", fr1, fr1);
-									fprintf(asmCode, "    sw  $%d, %d($%d)\n", fr, lhs->asm_location, fr1); }
-								else if(data->asmclass == 'c') {	// data is constant, rhs is constant
-									fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
-									fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, (data->value.ivalue*4+(lhs->asm_location))); }
-								else if(data->asmclass == 'r') {   // data is register, rhs is constant
-									fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
-									fprintf(asmCode, "    sll  $%d, $%d, 2\n", fr, fr);
-									fprintf(asmCode, " 	  add $%d, $%d, $fp\n", data->reg, data->reg);
-									fprintf(asmCode, "    sw $%d, %d($%d)\n", fr, lhs->asm_location, data->reg);
-								}
-								break;
-							case 'r':
-								if(data->asmclass == 'm') {   // data is memory(variable), rhs is register
-									fprintf(asmCode, "    lw  $%d, %d($fp)\n", fr1, data->asm_location);
-									fprintf(asmCode, "    sll  $%d, $%d, 2\n", fr1, fr1);
-									fprintf(asmCode, "    add  $%d, $%d, $fp\n", fr1, fr1);
-									fprintf(asmCode, "    sw  $%d, %d($%d)\n", rhs->reg, lhs->asm_location, fr1); }
-								else if(data->asmclass == 'c') {	// data is constant, rhs is register
-									fprintf(asmCode, "    sw  $%d, %d($fp)\n", rhs->reg, (data->value.ivalue*4+(lhs->asm_location))); }
-						}
+			case 0: 
+				switch (rhs->type) {
+				case 0:
+					fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
+					fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
+					fprintf(asmCode, "    sw $%d, %d($%d)\n", rhs->reg, lhs->asm_location, data->reg);
+					registers[data->reg - 2] = 0;
+					break;
 				}
-			break;
+				break;
 		}
-		registers[fr-2] = 0;
-		registers[fr1-2] = 0;
 	}
-	else {  
-		rhs = popV();
-		lhs = popV();
-		int fr = freeregister();
-		registers[fr-2] = 1;
+	else {
 		switch(lhs->type) {
-		case 0:
-				switch(rhs->type) {
-					case 0:
-						switch(rhs->asmclass) {
-							case 'm':
-							if(rhs->tag == 'v') {
-								fprintf(asmCode, "    lw  $%d, $%d($fp)\n",fr, rhs->asm_location);
-								fprintf(asmCode, "    sw  $%d, $%d($fp)\n",fr, lhs->asm_location);}
-								break;
-							case 'c':
-								fprintf(asmCode, "    li  $%d, %d\n", fr, rhs->value.ivalue);
-	 							fprintf(asmCode, "    sw  $%d, %d($fp)\n", fr, lhs->asm_location);
-								break;
-							case 'r':
-								fprintf(asmCode, "    sw  $%d, %d($fp)\n", rhs->reg, lhs->asm_location);
-						}
-						break;
+			case 0: 
+				switch (rhs->type) {
+				case 0:
+					ShowVStack();
+					printf("--------%d------------\n", rhs->reg);
+					fprintf(asmCode, "    sw  $%d, %d($fp)\n", rhs->reg, lhs->asm_location);
+					break;
 				}
-			break;
+				break;
 		}
-		registers[fr-2] = 0;
 	}
+	registers[rhs->reg - 2] = 0;
 }
 void processLoop(struct Ast_node *p, int level) {
     struct Symbol *lhs;
@@ -263,14 +205,12 @@ void processConditional(struct Ast_node *p, int level) {
 	struct Symbol* lhs;
 	generateCode(p->child_node[0], level + 1);	// Conditions for if condition or boolean called directly
 	lhs = popV();
-	if(lhs->value.ivalue == 0){
-		fprintf(asmCode,"	beq $%d $0 endif%d\n",lhs->reg,temp);
-	}
+	fprintf(asmCode,"	beq $%d $0 endif%d\n",lhs->reg,temp);
 	generateCode(p->child_node[1], level + 1); // statements list
 	fprintf(asmCode,"	b endelse%d\n",temp);
-	fprintf(asmCode,"	endif%d:\n",temp);
+	fprintf(asmCode,"endif%d:\n",temp);
 	generateCode(p->child_node[2], level + 1); // remaining conditions
-	fprintf(asmCode,"	endelse%d:\n",temp);
+	fprintf(asmCode,"endelse%d:\n",temp);
 }
 
 void processElseStmt(struct Ast_node *p, int level) {
@@ -402,7 +342,7 @@ void processBoolean(struct Ast_node *p, int level) {
 		switch (left->asmclass){
 			case 'm':
 				l = freeregister();
-				registers[l-2] = 1; 
+				registers[l-2] = 1;
 				fprintf(asmCode,"	lw $%d %d($fp)\n",l,left->asm_location);
 				switch (right->asmclass){
 					case 'm':
@@ -515,7 +455,10 @@ void processBoolean(struct Ast_node *p, int level) {
 				}
 				break;
 		}
-		fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
+		int k = freeregister();
+		fprintf(asmCode,"	slt $%d $%d $%d\n",k,r,l);
+		fprintf(asmCode,"	slt $%d $%d $%d\n",k,l,r);
+		fprintf(asmCode,"	xori $%d $%d %d\n",k,k,1);
 		sym -> reg = l;
 	}else if(strcmp(op->asm_name,"astNeq")==0){
 		if(left->value.ivalue != right->value.ivalue){
@@ -577,7 +520,7 @@ void processBoolean(struct Ast_node *p, int level) {
 				}
 				break;
 		}
-		fprintf(asmCode,"	li $%d %d\n",l,sym->value.ivalue);
+		fprintf(asmCode,"	sub $%d, $%d, $%d\n",l,l,r);
 		sym -> reg = l;
 	}else if(strcmp(op->asm_name,"astLte") == 0){
 		if(left->value.ivalue <= right->value.ivalue){
@@ -825,7 +768,6 @@ void processArrayDecl(struct Ast_node *p, int level) {
 		//generateCode(p->child_node[2], level + 1);	// Array Assignment
 		lhs = p->symbol_node;
 		int fr = freeregister();
-		registers[fr-2] = 1;
 		int l = lhs->asm_location;
 		printf("%d\n",int_stack_index);
 		for(int i=0; i<lhs->no_elements; i++) {
@@ -833,9 +775,7 @@ void processArrayDecl(struct Ast_node *p, int level) {
 			fprintf(asmCode, "    li $%d, %d, \n", fr, dequeue()->value.ivalue);
 			fprintf(asmCode, "    sw $%d, %d($fp), \n", fr, l);
 			l = l+4;
-			param_bytes += 4;
 		}
-		registers[fr-2] = 0;
 	}
 }
 
@@ -846,8 +786,39 @@ void processArrayType(struct Ast_node *p, int level) {
 }
 
 void processFuncCall(struct Ast_node *p, int level) {
-	generateCode(p->child_node[0], level + 1);	// Function Type
+	generateCode(p->child_node[0], level + 1);	// Function Type - Show
+	struct Symbol* sym = popV();
 	generateCode(p->child_node[1], level + 1);	// Arguments List
+	int i;
+	struct Symbol* argsList[SYM_TABLE_SIZE];
+	// reverse popping
+	printf("------------check1------------\n");
+	for(i=sym->no_of_params-1;i>=0;i--){
+		argsList[i] = popV();
+	}
+	printf("-------------check2-----------\n");
+	for(i=0;i<sym->no_of_params;i++){
+		if(argsList[i]->asmclass=='c'){ // constant value printing
+			fprintf(asmCode,"    li $a0, %d\n",argsList[i]->value.ivalue);
+			fprintf(asmCode,"    li $v0, 1\n");
+			fprintf(asmCode,"    syscall\n");
+		}
+		else if(argsList[i]->asmclass=='m'){
+			if(argsList[i]->tag=='v'){ // variable printing
+				fprintf(asmCode,"    lw $a0, %d($fp)\n",argsList[i]->asm_location);
+				fprintf(asmCode,"    li $v0, 1\n");
+				fprintf(asmCode,"    syscall\n");
+			}else if(argsList[i]->tag=='a'){ // array access and printing
+				fprintf(asmCode,"    lw $a0, %d($fp)\n",argsList[i]->asm_location);
+				fprintf(asmCode,"    li $v0, 1\n");
+				fprintf(asmCode,"    syscall\n");
+			}
+		}
+		// for newline printing;
+		fprintf(asmCode,"    li $v0, 4\n");
+		fprintf(asmCode,"    li $a0, newline\n");
+		fprintf(asmCode,"    syscall\n");
+	}
 }
 
 void processCustomFunc(struct Ast_node *p) {
@@ -855,7 +826,7 @@ void processCustomFunc(struct Ast_node *p) {
 }
 
 void processFuncShow(struct Ast_node *p) {
-
+	pushV(p->symbol_node);
 } 
 
 void processFuncTake(struct Ast_node *p) {
@@ -901,14 +872,20 @@ void processAssignment(struct Ast_node *p, int level) {
 void processExpr(struct Ast_node *p, int level) {
 	printf("Checking in Expression\n\n");
 	generateCode(p->child_node[0], level + 1);	// Expression
+	ShowVStack();
 	struct Symbol* lhs = popV();
 	generateCode(p->child_node[1], level + 1);	// Operator
+	ShowVStack();
 	struct Symbol* op = popV();
 	printf("Expression1\n");
 	generateCode(p->child_node[2], level + 1);	// Value
+	ShowVStack();
 	printf("Expression2\n");
-	struct Symbol* val = popV();
-	struct Symbol* sym = (struct Symbol *)malloc(sizeof(struct Symbol));;
+	struct Symbol* val = popV();     
+	printf("******************************************%s:%d\n",lhs->name,lhs->asm_location);
+	printf("******************************************%s:%d\n",op->name,op->value.ivalue);
+	printf("******************************************%s:%d\n",val->name,val->value.ivalue);
+	struct Symbol* sym = (struct Symbol *)malloc(sizeof(struct Symbol));
 	if(strcmp(op->name,"astAdd")==0){
 		sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
 		sym->asmclass = 'r';
@@ -917,20 +894,33 @@ void processExpr(struct Ast_node *p, int level) {
 		switch (lhs->asmclass){
 			case 'm':
 				l = freeregister();
-				fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
 				registers[l-2] = 1;
 				lhs->reg = l;
+				if(lhs->tag == 'a') {
+					struct Symbol* data = popV();
+					fprintf(asmCode,"	lw $%d %d($fp)\n",l,lhs->asm_location + 4*(data->value.ivalue));
+					printf("%d ------------------- %d",lhs->asm_location,data->value.ivalue);
+				} else {
+					fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
+				}
 				switch (val->asmclass){
 					case 'm':
 						r = freeregister();
-						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
-						registers[r-2] = 1;
-						val->reg = r;
-						fprintf(asmCode, "   addu $%d, $%d, $%d\n",l,r,l);
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							printf("-----------------------Heyyyyyy %s %d -------\n", val->name, val->asm_location);
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
+						// registers[r-2] = 1;
+						// val->reg = r;
+						fprintf(asmCode, "   add $%d, $%d, $%d\n",l,r,l);
 						sym->reg = l;
 					break;
 					case 'c':
-						fprintf(asmCode, "  addu $%d, $%d, %d\n",l,l,val->value.ivalue);
+						fprintf(asmCode, "	 addu $%d, $%d, %d\n",l,l,val->value.ivalue);
 						sym->reg = l;
 					break;
 					case 'r':
@@ -946,10 +936,15 @@ void processExpr(struct Ast_node *p, int level) {
 				switch (val->asmclass){
 					case 'm':
 						r = freeregister();
-						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
 						registers[r-2] = 1;
-						val->reg = r;
-						fprintf(asmCode, "  addu $%d, $%d, %d\n",r,r,lhs->value.ivalue);
+						fprintf(asmCode, "    addu $%d, $%d, %d\n",r,r,lhs->value.ivalue);
 						sym->reg = r;
 					break;
 					case 'c':
@@ -966,6 +961,32 @@ void processExpr(struct Ast_node *p, int level) {
 					break;
 				}
 			break;
+			case 'r':
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
+						fprintf(asmCode, "  add $%d, $%d, $%d\n",lhs->reg,lhs->reg,r);
+						sym->reg = lhs->reg;
+					break;
+					case 'c':
+						fprintf(asmCode, "    addu $%d, $%d, %d\n",lhs->reg,lhs->reg,val->value.ivalue);
+						sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
+					break;
+					case 'r':
+						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
+					break;
+					case 's':
+						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
+					break;
+				}
+			break;
 		}
 	}
 	else if(strcmp(op->name,"astMul")==0){
@@ -976,13 +997,25 @@ void processExpr(struct Ast_node *p, int level) {
 		switch (lhs->asmclass){
 			case 'm':
 				l = freeregister();
-				fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
-				registers[l-2] = 1;
+				// registers[l-2] = 1;
 				lhs->reg = l;
+				if(lhs->tag == 'a') {
+					struct Symbol* data = popV();
+					fprintf(asmCode,"	lw $%d %d($fp)\n",l,lhs->asm_location + 4*(data->value.ivalue));
+					printf("%d ------------------- %d",lhs->asm_location,data->value.ivalue);
+				} else {
+					fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
+				}
 				switch (val->asmclass){
 					case 'm':
 						r = freeregister();
-						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
 						registers[r-2] = 1;
 						val->reg = r;
 						fprintf(asmCode, "    mult $%d, $%d\n",l,r);
@@ -1010,11 +1043,17 @@ void processExpr(struct Ast_node *p, int level) {
 				switch (val->asmclass){
 					case 'm':
 						r = freeregister();
-						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
 						registers[r-2] = 1;
 						val->reg = r;
 						l = freeregister();
-						fprintf(asmCode, "    li $%d, %d\n",l, val->value.ivalue);
+						fprintf(asmCode, "    li $%d, %d\n",l, lhs->value.ivalue);
 						fprintf(asmCode, "    mult $%d, $%d\n",l,r);
 						fprintf(asmCode, "    mflo $%d\n",r);
 						sym->reg = r;
@@ -1033,6 +1072,39 @@ void processExpr(struct Ast_node *p, int level) {
 					break;
 				}
 			break;
+			case 'r':
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
+						val->reg = r;
+						registers[r-2] = 1;
+						fprintf(asmCode, "    mult $%d, $%d\n",lhs->reg,val->reg);
+						fprintf(asmCode, "    mflo $%d\n",val->reg);
+						sym->reg = val->reg;
+					break;
+					case 'c':
+						r = freeregister();
+						fprintf(asmCode, "    li $%d, %d\n",r, val->value.ivalue);
+						registers[r-2] = 1;
+						fprintf(asmCode, "    mult $%d, $%d\n",lhs->reg,r);
+						fprintf(asmCode, "    mflo $%d\n",r);
+						sym->reg = r;
+					break;
+					case 'r':
+						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
+					break;
+					case 's':
+						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
+					break;
+				}
+			break;
 		}
 	}
 	else if(strcmp(op->name,"astSub")==0){
@@ -1043,20 +1115,32 @@ void processExpr(struct Ast_node *p, int level) {
 		switch (lhs->asmclass){
 			case 'm':
 				l = freeregister();
-				fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
 				registers[l-2] = 1;
 				lhs->reg = l;
+				if(lhs->tag == 'a') {
+					struct Symbol* data = popV();
+					fprintf(asmCode,"	lw $%d %d($fp)\n",l,lhs->asm_location + 4*(data->value.ivalue));
+					printf("%d ------------------- %d",lhs->asm_location,data->value.ivalue);
+				} else {
+					fprintf(asmCode, "    lw $%d, %d($fp)\n",l, lhs->asm_location);
+				}
 				switch (val->asmclass){
 					case 'm':
 						r = freeregister();
-						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
-						registers[r-2] = 1;
-						val->reg = r;
-						fprintf(asmCode, "    subu $%d, $%d, $%d\n",l,r,l);
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
+						// registers[r-2] = 1;
+						// val->reg = r;
+						fprintf(asmCode, "   sub $%d, $%d, $%d\n",l,r,l);
 						sym->reg = l;
 					break;
 					case 'c':
-						fprintf(asmCode, "    subu $%d, $%d, %d\n",l,l,val->value.ivalue);
+						fprintf(asmCode, "	 subu $%d, $%d, %d\n",l,l,val->value.ivalue);
 						sym->reg = l;
 					break;
 					case 'r':
@@ -1072,20 +1156,51 @@ void processExpr(struct Ast_node *p, int level) {
 				switch (val->asmclass){
 					case 'm':
 						r = freeregister();
-						fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
 						registers[r-2] = 1;
-						val->reg = r;
 						fprintf(asmCode, "    subu $%d, $%d, %d\n",r,r,lhs->value.ivalue);
 						sym->reg = r;
 					break;
 					case 'c':
-						sym->value.ivalue = lhs->value.ivalue - val->value.ivalue;
+						sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
 						sym->asmclass='c';
 					break;
 					case 'r':
 					// No idea if this case is possible
 						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
 						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+					break;
+					case 's':
+						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
+					break;
+				}
+			break;
+			case 'r':
+				switch (val->asmclass){
+					case 'm':
+						r = freeregister();
+						if(val->tag == 'a') {
+							struct Symbol* data = popV();
+							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
+							printf("%d ------------------- %d",val->asm_location,data->value.ivalue);
+						} else {
+							fprintf(asmCode, "    lw $%d, %d($fp)\n",r, val->asm_location);
+						}
+						fprintf(asmCode, "  sub $%d, $%d, $%d\n",lhs->reg,lhs->reg,r);
+						sym->reg = lhs->reg;
+					break;
+					case 'c':
+						fprintf(asmCode, "    subu $%d, $%d, %d\n",lhs->reg,lhs->reg,val->value.ivalue);
+						sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
+					break;
+					case 'r':
+						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
 					break;
 					case 's':
 						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
@@ -1099,7 +1214,42 @@ void processExpr(struct Ast_node *p, int level) {
 	pushV(sym);
 }
 
+void processValue(struct Ast_node *p, int level){
+	struct Symbol *sym, *data;
+	 generateCode(p->child_node[0], level + 1);	// Value
+	 struct Symbol* s = (struct Symbol *)malloc(sizeof(struct Symbol));
+	 s->asmclass = 'r';
+	 int fr;
+	 switch(p->symbol_node->tag) {
+		 case 'a':
+			sym = popV();
+			data = popV();
+			fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
+			fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
+			fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, sym->asm_location, data->reg);
+			s->reg = data->reg;
+		 	break;
+		 case 'v':
+		 	sym = popV();
+			fr = freeregister();
+	 		registers[fr-2] = 1;
+			fprintf(asmCode, "    lw  $%d, %d($fp)\n",fr, sym->asm_location);
+			s->reg = fr;
+		  	break;
+		 case 'c':
+			sym = popV();
+			fr = freeregister();
+	 		registers[fr-2] = 1;
+			fprintf(asmCode, "    li  $%d, %d\n",fr, sym->value.ivalue);
+			s->reg = fr;
+		 	break;
+	}
+	pushV(s);
+}
+
 void processArr(struct Ast_node *p, int level) {
+	// struct Symbol *sym = (struct Symbol *)malloc(sizeof(struct Symbol));
+	printf("-----------process Arr %d-----------\n", p->child_node[0]->node_type);
 	generateCode(p->child_node[0], level + 1);	// Expr
 	pushV(p->symbol_node);
 }
@@ -1232,24 +1382,9 @@ void display() {
 
 /************ Initializer of asm files ****************/
 void enterInitCode() {
-    fprintf(asmData, "section .data\n\n");
-	fprintf(asmData, "cw dw 057fH\n");
-	fprintf(asmData, "integer_1 dd 1\n");
-	fprintf(asmData, "REG_INT  dd 0\n");
-	fprintf(asmData, "REG_REAL dq 0.0\n");
-	fprintf(asmData, "format_read_int db \"%%d\", 0\n");
-	fprintf(asmData, "format_read_char db \"%%c\", 0\n");
-	fprintf(asmData, "format_read_real db \"%%lf\", 0\n");
-	fprintf(asmCode, "\nsection .text\n\n");
-	fprintf(asmCode, "extern _printf\n");
-	fprintf(asmCode, "extern _scanf\n");
-	fprintf(asmCode, "global _main\n");
-	fprintf(asmCode, "_main:\n");
-	fprintf(asmCode, "    fldcw [cw]\n");
-	fprintf(asmCode, "    call _source_start\n");
-	fprintf(asmCode, "    ret\n");
-	
-	fprintf(asmCode, "\n; ----------------------- ;\n\n");
+    fprintf(asmCode,".data\n");
+	fprintf(asmCode,"newline:  .asciiz \"\\n\"\n");
+	fprintf(asmCode,".text\n");
 }
 
 
@@ -1433,6 +1568,9 @@ void generateCode(struct Ast_node *p, int level) {
         case astId:
             processId(p);
             break;
+		case astValue:
+			processValue(p,level);
+			break;
         default:
             printf("Error in semantics.c: No such Node Type found");
             break;
@@ -1461,6 +1599,7 @@ void main(int argc, char *argv[]) {
     asmData = fopen("./Compiler/AssemblyData.asm", "w+");
     asmCode = fopen("./Compiler/AssemblyCode.asm", "w+");
 
+	enterInitCode();
     if (astroot->node_type != astEmptyProgram) {
         generateCode(astroot, 0);
     }
@@ -1645,6 +1784,9 @@ void traverse(struct Ast_node *p, int n)
 				break;
 			case astId:
 				spacing(n); printf("astId\n"); 
+				break;
+			case astValue:
+				spacing(n); printf("astValue\n"); 
 				break;
 			default: 
 				printf("Not Found = %d\n",p->node_type);
