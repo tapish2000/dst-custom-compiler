@@ -145,10 +145,11 @@ void processArrayAssignStmt(struct Ast_node *p, int level) {
     generateCode(p->child_node[1], level + 1);  // Assignment
 
 	if(p->child_node[0]->node_type == astArr) {
-		generateCode(p->child_node[0]->child_node[0], level+2);
-	    data = popV();
-		rhs = popV();
+		printf("-------------------\n");
+		ShowVStack();
+	    rhs = popV();
 		lhs = popV();
+		data = popV();
 		int fr=freeregister(), fr1=freeregister();
 		registers[fr-2] = 1;
 		registers[fr1-2] = 1;
@@ -821,18 +822,20 @@ void processArrayDecl(struct Ast_node *p, int level) {
 	generateCode(p->child_node[0], level + 1);	// Array Type
 	if(p->child_node[1]!=NULL) {
 		generateCode(p->child_node[1], level + 1);	// Array Assignment
-	//generateCode(p->child_node[2], level + 1);	// Array Assignment
-	lhs = p->symbol_node;
-	int fr = freeregister();
-	int l = lhs->asm_location;
-	printf("%d\n",int_stack_index);
-	for(int i=0; i<lhs->no_elements; i++) {
-		//rhs = rs[index_stack] ; //= //vs[]; //Variable stack access  // Check
-		fprintf(asmCode, "li $%d, %d, \n", fr, dequeue()->value.ivalue);
-		fprintf(asmCode, "sw $%d, %d($fp), \n", fr, l);
-		l = l+4;
-		param_bytes += 4;
-	}
+		//generateCode(p->child_node[2], level + 1);	// Array Assignment
+		lhs = p->symbol_node;
+		int fr = freeregister();
+		registers[fr-2] = 1;
+		int l = lhs->asm_location;
+		printf("%d\n",int_stack_index);
+		for(int i=0; i<lhs->no_elements; i++) {
+			//rhs = rs[index_stack] ; //= //vs[]; //Variable stack access  // Check
+			fprintf(asmCode, "    li $%d, %d, \n", fr, dequeue()->value.ivalue);
+			fprintf(asmCode, "    sw $%d, %d($fp), \n", fr, l);
+			l = l+4;
+			param_bytes += 4;
+		}
+		registers[fr-2] = 1;
 	}
 }
 
@@ -1098,8 +1101,6 @@ void processExpr(struct Ast_node *p, int level) {
 
 void processArr(struct Ast_node *p, int level) {
 	generateCode(p->child_node[0], level + 1);	// Expr
-	struct Symbol* s = popV();
-	printf("-------------%d %d--------------\n", s->value.ivalue, s->reg);
 	pushV(p->symbol_node);
 }
 
