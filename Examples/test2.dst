@@ -1,21 +1,19 @@
 start{
-    array <integer,5> arr is [5,2,3,1,4];
-    integer i is 0;
-    loopif(i<5){
-        integer j is 0;
-        loopif(j<5-i-1){
-            if(arr[j]>arr[j+1]){
-                integer t is arr[j+1];
-                arr[j+1] is arr[j];
-                arr[j] is t;
-            }
-            j is j+1;
+    integer a is 6;
+    integer b is 4;
+    integer c is 5;
+    if(a>b){
+        if(a>c){
+            show(a);
         }
-        i is i+1;
-    }
-    integer k is 0;
-    loopif(k<5){
-        show(arr[k]);
-        k is k+1;
+        else{
+            show(c);
+        }
+    }else{
+        if(b>c){
+            show(b);
+        }else{
+            show(c);
+        }
     }
 }
