@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 start{
     array <integer, 10> arr is [1,2,3,4,5,6,7,8,9,10];
     integer i is 0;
@@ -215,3 +216,15 @@ ShowVStack();
 	// printf("Checking Operator type : %s\n",p->child_node[1]->symbol_node->asmclass);
 	printf("----> %d\n",sym->value.ivalue);
 	pushV(sym);
+=======
+start {
+  integer n is 5;
+  integer i is 1;
+  integer sum is 0;
+  loopif (i <= n) {
+    sum is sum + i;
+    i is i + 1;
+  }
+  show(sum);
+}
+>>>>>>> 08b733be4d63e299a427e79bcdc21ae9605518e6
