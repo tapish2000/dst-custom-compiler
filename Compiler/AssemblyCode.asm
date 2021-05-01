@@ -37,7 +37,9 @@ loopif1:
     add  $5, $5, $fp
     lw  $5, 8($5)
     lw  $6, 32($fp)
-	lw $7 20($fp)
+    sll  $6, $6, 2
+    add  $6, $6, $fp
+    lw  $6, 20($6)
     add $5, $5, $7
     sll  $4, $4, 2
     add  $4, $4, $fp

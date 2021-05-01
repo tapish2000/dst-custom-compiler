@@ -835,11 +835,18 @@ void processAssignment(struct Ast_node *p, int level)
 void processExpr(struct Ast_node *p, int level)
 {
 	generateCode(p->child_node[0], level + 1); // Expression
+	ShowVStack();
 	struct Symbol *lhs = popV();
 	generateCode(p->child_node[1], level + 1); // Operator
+	ShowVStack();
 	struct Symbol *op = popV();
 	generateCode(p->child_node[2], level + 1); // Value
+	ShowVStack();
 	struct Symbol *val = popV();
+	struct Symbol * data;
+	if(val->tag=='a'){
+		data = popV();
+	}
 	struct Symbol *sym = (struct Symbol *)malloc(sizeof(struct Symbol));
 	if (strcmp(op->name, "astAdd") == 0)
 	{
@@ -927,8 +934,10 @@ void processExpr(struct Ast_node *p, int level)
 				r = freeregister();
 				if (val->tag == 'a')
 				{
-					struct Symbol *data = popV();
-					fprintf(asmCode, "    lw $%d %d($fp)\n", r, val->asm_location + 4 * (data->value.ivalue));
+					// struct Symbol *data = popV();
+					fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
+					fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
+					fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, val->asm_location, data->reg);
 				}
 				else
 				{
@@ -1209,6 +1218,8 @@ void processValue(struct Ast_node *p, int level)
 		fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
 		fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
 		fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, sym->asm_location, data->reg);
+		printf("********* Check value: %d\n",data->value.ivalue);
+		s->value.ivalue = data->value.ivalue;
 		s->reg = data->reg;
 		break;
 	case 'v':
@@ -1216,6 +1227,7 @@ void processValue(struct Ast_node *p, int level)
 		fr = freeregister();
 		registers[fr - 2] = 1;
 		fprintf(asmCode, "    lw  $%d, %d($fp)\n", fr, sym->asm_location);
+		s->value.ivalue = sym->value.ivalue;
 		s->reg = fr;
 		break;
 	case 'c':
@@ -1223,6 +1235,7 @@ void processValue(struct Ast_node *p, int level)
 		fr = freeregister();
 		registers[fr - 2] = 1;
 		fprintf(asmCode, "    li  $%d, %d\n", fr, sym->value.ivalue);
+		s->value.ivalue = sym->value.ivalue;
 		s->reg = fr;
 		break;
 	}
@@ -1264,6 +1277,7 @@ void processFloatConst(struct Ast_node *p)
 void processId(struct Ast_node *p)
 {
 	p->symbol_node->asmclass = 'm';
+	printf("########Debug: %d\n",p->symbol_node->value.ivalue);
 	pushV(p->symbol_node);
 }
 
