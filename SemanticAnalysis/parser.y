@@ -28,6 +28,8 @@ struct Symbol *rs[30];
 int vtop = -1;
 struct Symbol *vs[30];
 
+
+
 struct Hash_Table Symbols_Table[SYM_TABLE_SIZE];
 struct Hash_Table methods_table;
 
@@ -55,7 +57,7 @@ struct Symbol *curMethod = NULL;
 %type <node> program functions function function_name data_type params param_list param
 %type <node> stmts_list stmt withSemcol withoutSemcol
 %type <node> array_decl return_stmt func_call func_type
-%type <node> loop conditional conditions remain_cond elif_stmts else_stmt boolean bi_logic_cond rel_op op
+%type <node> loop conditional conditions else_stmt boolean bi_logic_cond rel_op op
 %type <node> expr array_assign assign_stmt assignment args_list args id_list
 %type <node> data constant arr value
 
@@ -370,7 +372,7 @@ return_stmt:                      RET expr
 array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_assign 
                                   {
                                     s1 = vs[vtop];
-                                    if(s1 != NULL) {
+                                    if(s1->type != 4) {
                                       s1 = vs[vtop-no_of_elements];
                                       printf("\n%d %d\n",$5, no_of_elements);
                                       if($5 != no_of_elements) {
@@ -384,13 +386,16 @@ array_decl:                       ARR '<' data_type ',' INT_CONST '>' ID array_a
                                           printf("Error! Type of the array and the element are not matching\n");
                                         }
                                       }
-                                    } else {popV();}
+                                    }
+                                    else {
+                                        popV();
+                                      }
                                       s1 = popV();
                                       default_value(s1->type);
-                                      sym = makeSymbol($7, s2->type, &value, $5*4, 'a', $5, 0);
+                                      sym = makeSymbol($7, s1->type, &value, $5*4, 'a', $5, 0);
                                       add_variable_to_table(sym);
                                       sym->asm_location = 8 + int_stack_index*4;
-                                      int_stack_index += no_of_elements;
+                                      int_stack_index += $5;
                                       $$ = makeNode(astArrayDecl, sym, $3, $8, NULL, NULL);
                                   };
 
@@ -446,36 +451,22 @@ func_call:                        func_type '(' args_list ')'
                                       pushV(sym);
                                     }
                                     else {
-                                      for(int i=0; i<=no_of_args; i++)
+                                      int i;
+                                      for(i=0; i<no_of_args; i++){
                                         popV();
+                                      }
+                                      sym = popV();
+                                      sym->no_of_params = no_of_args;
                                     }
                                   };
 
-func_type:                        FUNC_ID 
+func_type:                        SHOW 
                                   {
-                                    $$ = makeNode(astCustomFunc, NULL, NULL, NULL, NULL, NULL);
-                                    sym = NULL;
-                                    sym = find_method($1);
-                                    if(sym==NULL) {
-                                      printf("Error! Function %s is not declared\n", $1);
-                                      error_code = 1;
-                                    }
-                                    pushV(sym);
-                                  }
-                                  | SHOW 
-                                  {
-                                    $$ = makeNode(astFuncShow, NULL, NULL, NULL, NULL, NULL);
                                     default_value(0);
                                     sym = makeSymbol("show",4,&value,0,'f',0,0);
                                     pushV(sym);
+                                    $$ = makeNode(astFuncShow, sym, NULL, NULL, NULL, NULL);
                                   }
-                                  | TAKE
-                                  {
-                                    $$ = makeNode(astFuncTake, NULL, NULL, NULL, NULL, NULL);
-                                    default_value(0);
-                                    sym = makeSymbol("take",4,&value,0,'f',0,0);
-                                    pushV(sym);
-                                  };
 
 args_list:                        args 
                                   {
@@ -505,7 +496,8 @@ array_assign:                     ASSIGN '[' id_list ']'
                                   | /* EMPTY */ 
                                   {
                                     $$ = NULL;
-                                    pushV(NULL);
+                                    no_of_elements = 0;
+                                    pushV(makeSymbol("", 4, &value, 0, 'v', 0, 0));
                                   };
 
 id_list:                          id_list ',' constant 
@@ -524,7 +516,7 @@ id_list:                          id_list ',' constant
 param:                            data_type ID 
                                   {
                                     printf("param\n");
-                                    
+
                                     default_value(type);
                                     s1 = popV();
                                     sym = makeSymbol($2, s1->type, &value, s1->size, 'v', 1, 0);
@@ -532,6 +524,7 @@ param:                            data_type ID
                                     pushV(sym);
                                     sym->asm_location = 8 + int_stack_index*4;
                                     int_stack_index++;
+                                    printf("----------------------%s %d-------------------------\n", sym->name, sym->asm_location);
                                     $$ = makeNode(astParam, sym, $1, NULL, NULL, NULL);
                                   }
 
@@ -583,7 +576,8 @@ expr:                             expr op value
                                   | value
                                   {
                                     printf("expr2\n");
-                                    $$ = $1;
+                                    sym = vs[vtop];
+                                    $$ = makeNode(astValue, sym, $1, NULL, NULL, NULL);
                                   };
 
 value:                            func_call 
@@ -600,15 +594,19 @@ value:                            func_call
                                     $$ = $1;
                                   }; 
 
-arr:                              ID '[' data ']' 
+arr:                              ID '[' expr ']' 
                                   {
                                     sym = NULL;
                                     sym = find_variable($1); 
+                                    sym->asmclass = 'm';
                                     if(sym==NULL) {
                                       printf("Error! Variable %s is not declared\n", $1);
                                       error_code = 1;
                                     }
                                     s1 = popV();
+                                    if(s1->type != 0) {
+                                      printf("Error! Expression for index array is not of integer type\n");
+                                    }
                                     pushV(sym);
                                     $$ = makeNode(astArr, sym, $3, NULL, NULL, NULL);
                                   }
@@ -627,8 +625,8 @@ arr:                              ID '[' data ']'
 data:                             INT_CONST 
                                   {
                                     value.ivalue = $1;
-                                    sym = makeSymbol("INT_CONST", 0, &value, 4, 'c', 1, 0);
-                                    $$ = makeNode(astData, sym, NULL, NULL, NULL, NULL);
+                                    sym = makeSymbol("intConst", 0, &value, 4, 'c', 1, 0);
+                                    $$ = makeNode(astIntConst, sym, NULL, NULL, NULL, NULL);
                                   }
                                   | ID
                                   {
@@ -906,6 +904,10 @@ struct Symbol *popV()
    return(vs[vtop--]);
 }
 
+struct Symbol* reverse_pop(){
+
+}
+
 //Return Stack
 
 void ShowRStack(){
@@ -1020,7 +1022,8 @@ struct Symbol * makeSymbol(char *name, int type, union Value* value, int size,ch
       ptr->value.ivalue = value->ivalue;
       break;
     default:
-      printf("Incompatible Data Type!\n");
+      //printf("Incompatible Data Type!\n");
+      ptr->value.ivalue = 0;
       break;
   }
   printf("3\n");

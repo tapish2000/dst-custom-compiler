@@ -1,8 +1,8 @@
 start{
-    array <integer,5> arr is [5,2,3,1,4];
+    array arr<integer,5> is {5,2,3,1,4};
     integer i is 0;
     loopif(i<5){
-        integer j is 0;
+        intger j is 0;
         loopif(j<5-i-1){
             if(arr[j]>arr[j+1]){
                 integer t is arr[j+1];
@@ -12,5 +12,9 @@ start{
             j is j+1;
         }
         i is i+1;
+    }
+    i is 0;
+    loopif(i<5){
+        show(arr[i]);
     }
 }
