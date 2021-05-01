@@ -1,5 +1,16 @@
-start {
-  integer a is 5;
-  integer b is 6;
-  show(a,5);
+start{
+    array <integer,5> arr is [5,2,3,1,4];
+    integer i is 0;
+    loopif(i<5){
+        integer j is 0;
+        loopif(j<5-i-1){
+            if(arr[j]>arr[j+1]){
+                integer t is arr[j+1];
+                arr[j+1] is arr[j];
+                arr[j] is t;
+            }
+            j is j+1;
+        }
+        i is i+1;
+    }
 }
