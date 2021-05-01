@@ -13,4 +13,9 @@ start{
         }
         i is i+1;
     }
+    integer k is 0;
+    loopif(k<5){
+        show(arr[k]);
+        k is k+1;
+    }
 }

@@ -2,8 +2,8 @@
 newline:  .asciiz "\n"
 .text
 main:
-    addiu $sp,$sp,-40
-    sw $fp,36($sp)
+    addiu $sp,$sp,-44
+    sw $fp,40($sp)
     move $fp,$sp
     li $2, 5, 
     sw $2, 8($fp), 
@@ -71,14 +71,39 @@ endelse1:
     lw  $8, 32($fp)
     addu $8, $8, 1
     sw  $8, 32($fp)
+    b loopif2
 endloopif2:
     lw  $8, 28($fp)
     addu $8, $8, 1
     sw  $8, 28($fp)
+    b loopif1
 endloopif1:
+    li  $8, 0
+    sw $8, 40($fp)
+loopif3:
+    lw  $8, 40($fp)
+    li  $9, 5
+	slt $8 $8 $9
+    beq $8, $0, endloopif3
+    nop
+    lw  $10, 40($fp)
+    sll  $10, $10, 2
+    add  $10, $10, $fp
+    lw  $10, 8($10)
+    addi $a0, $10, 0
+    li $v0, 1
+    syscall
+    li $v0, 4
+    la $a0, newline
+    syscall
+    lw  $11, 40($fp)
+    addu $11, $11, 1
+    sw  $11, 40($fp)
+    b loopif3
+endloopif3:
     move $2,$0
     move $sp,$fp
-    lw $fp,36($sp)
-    addiu $sp,$sp,40
+    lw $fp,40($sp)
+    addiu $sp,$sp,44
     j $31
 nop
