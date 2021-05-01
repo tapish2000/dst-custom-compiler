@@ -928,13 +928,13 @@ void processExpr(struct Ast_node *p, int level)
 				if (val->tag == 'a')
 				{
 					struct Symbol *data = popV();
-					fprintf(asmCode, "	lw $%d %d($fp)\n", r, val->asm_location + 4 * (data->value.ivalue));
+					fprintf(asmCode, "    lw $%d %d($fp)\n", r, val->asm_location + 4 * (data->value.ivalue));
 				}
 				else
 				{
 					fprintf(asmCode, "    lw $%d, %d($fp)\n", r, val->asm_location);
 				}
-				fprintf(asmCode, "  add $%d, $%d, $%d\n", lhs->reg, lhs->reg, r);
+				fprintf(asmCode, "    add $%d, $%d, $%d\n", lhs->reg, lhs->reg, r);
 				sym->reg = lhs->reg;
 				break;
 			case 'c':

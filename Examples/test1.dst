@@ -1,14 +1,10 @@
-start{
-    array <integer, 10> arr is [1,2,3,4,5,6,7,8,9,10];
-    integer i is 0;
-    loopif(i<10){
-        if(arr[i] equals 2){
-            show("It is 2\n");
-        }elif(arr[i] equals 5){
-            show("It is 5\n");
-        }else{
-            show("A simple integer\n");
-        }
-        i is i + 1;
-    }
+start {
+  integer n is 5;
+  integer i is 1;
+  integer sum is 0;
+  loopif (i <= n) {
+    sum is sum + i;
+    i is i + 1;
+  }
+  show(sum);
 }

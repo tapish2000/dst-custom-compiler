@@ -2,108 +2,64 @@
 newline:  .asciiz "\n"
 .text
 main:
-    addiu $sp,$sp,-44
-    sw $fp,40($sp)
+    addiu $sp,$sp,-48
+    sw $fp,44($sp)
     move $fp,$sp
-    li $2, 5, 
-    sw $2, 8($fp), 
-    li $2, 2, 
-    sw $2, 12($fp), 
-    li $2, 3, 
-    sw $2, 16($fp), 
     li $2, 1, 
+    sw $2, 8($fp), 
+    li $2, 6, 
+    sw $2, 12($fp), 
+    li $2, 2, 
+    sw $2, 16($fp), 
+    li $2, 5, 
     sw $2, 20($fp), 
-    li $2, 4, 
+    li $2, 8, 
     sw $2, 24($fp), 
+    li $2, 3, 
+    sw $2, 28($fp), 
     li  $2, 0
-    sw $2, 28($fp)
+    sw $2, 32($fp)
+    li $2, 0, 
+    sw $2, 36($fp), 
+    li $2, 0, 
+    sw $2, 40($fp), 
+    li $2, 0, 
+    sw $2, 44($fp), 
 loopif1:
-    lw  $2, 28($fp)
-    li  $3, 5
+    lw  $2, 32($fp)
+    li  $3, 3
 	slt $2 $2 $3
     beq $2, $0, endloopif1
     nop
-    li  $4, 0
-    sw $4, 32($fp)
-loopif2:
     lw  $4, 32($fp)
-    li  $5, 5
-    lw $6, 28($fp)
-  sub $5, $5, $6
-    subu $5, $5, 1
-	slt $4 $4 $5
-    beq $4, $0, endloopif2
-    nop
+    lw  $5, 32($fp)
+    sll  $5, $5, 2
+    add  $5, $5, $fp
+    lw  $5, 8($5)
     lw  $6, 32($fp)
-    sll  $6, $6, 2
-    add  $6, $6, $fp
-    lw  $6, 8($6)
-    lw  $7, 32($fp)
-    addu $7, $7, 1
-    sll  $7, $7, 2
-    add  $7, $7, $fp
-    lw  $7, 8($7)
-	slt $6 $7 $6
-	beq $6 $0 endif1
-    lw  $8, 32($fp)
-    addu $8, $8, 1
-    sll  $8, $8, 2
-    add  $8, $8, $fp
-    lw  $8, 8($8)
-    sw $8, 36($fp)
-    lw  $8, 32($fp)
-    addu $8, $8, 1
-    lw  $9, 32($fp)
-    sll  $9, $9, 2
-    add  $9, $9, $fp
-    lw  $9, 8($9)
-    sll  $8, $8, 2
-    add  $8, $8, $fp
-    sw $9, 8($8)
-    lw  $8, 32($fp)
-    lw  $9, 36($fp)
-    sll  $8, $8, 2
-    add  $8, $8, $fp
-    sw $9, 8($8)
-	b endelse1
-endif1:
-endelse1:
-    lw  $8, 32($fp)
-    addu $8, $8, 1
-    sw  $8, 32($fp)
-    b loopif2
-endloopif2:
-    lw  $8, 28($fp)
-    addu $8, $8, 1
-    sw  $8, 28($fp)
-    b loopif1
-endloopif1:
-    li  $8, 0
-    sw $8, 40($fp)
-loopif3:
-    lw  $8, 40($fp)
-    li  $9, 5
-	slt $8 $8 $9
-    beq $8, $0, endloopif3
-    nop
-    lw  $10, 40($fp)
-    sll  $10, $10, 2
-    add  $10, $10, $fp
-    lw  $10, 8($10)
-    addi $a0, $10, 0
+	lw $7 20($fp)
+    add $5, $5, $7
+    sll  $4, $4, 2
+    add  $4, $4, $fp
+    sw $5, 36($4)
+    lw  $4, 32($fp)
+    sll  $4, $4, 2
+    add  $4, $4, $fp
+    lw  $4, 36($4)
+    addi $a0, $4, 0
     li $v0, 1
     syscall
     li $v0, 4
     la $a0, newline
     syscall
-    lw  $11, 40($fp)
-    addu $11, $11, 1
-    sw  $11, 40($fp)
-    b loopif3
-endloopif3:
+    lw  $5, 32($fp)
+    addu $5, $5, 1
+    sw  $5, 32($fp)
+    b loopif1
+endloopif1:
     move $2,$0
     move $sp,$fp
-    lw $fp,40($sp)
-    addiu $sp,$sp,44
+    lw $fp,44($sp)
+    addiu $sp,$sp,48
     j $31
 nop
