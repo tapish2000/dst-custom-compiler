@@ -726,7 +726,6 @@ void processArrayDecl(struct Ast_node *p, int level)
 		lhs = p->symbol_node;
 		int fr = freeregister();
 		int l = lhs->asm_location;
-		printf("%d\n", int_stack_index);
 		for (int i = 0; i < lhs->no_elements; i++)
 		{
 			fprintf(asmCode, "    li $%d, %d, \n", fr, dequeue()->value.ivalue);
@@ -1219,7 +1218,6 @@ void processValue(struct Ast_node *p, int level)
 		fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
 		fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
 		fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, sym->asm_location, data->reg);
-		printf("********* Check value: %d\n",data->value.ivalue);
 		s->value.ivalue = data->value.ivalue;
 		s->reg = data->reg;
 		break;
@@ -1278,7 +1276,6 @@ void processFloatConst(struct Ast_node *p)
 void processId(struct Ast_node *p)
 {
 	p->symbol_node->asmclass = 'm';
-	printf("########Debug: %d\n",p->symbol_node->value.ivalue);
 	pushV(p->symbol_node);
 }
 
@@ -1556,8 +1553,11 @@ void generateCode(struct Ast_node *p, int level)
 	case astValue:
 		processValue(p, level);
 		break;
+	case astInt:
+		break;
 	default:
-		printf("Error in semantics.c: No such Node Type found");
+		printf("%d\n",p->node_type);
+		printf("Error in semantics.c: No such Node Type found\n");
 		break;
 	}
 }
@@ -1827,6 +1827,10 @@ void traverse(struct Ast_node *p, int n)
 		case astValue:
 			spacing(n);
 			printf("astValue\n");
+			break;
+		case astArrayAssignStmt:
+			spacing(n);
+			printf("astArrayAssignStmt\n");
 			break;
 		default:
 			printf("Not Found = %d\n", p->node_type);
