@@ -509,6 +509,7 @@ param:                            data_type ID
                                     pushV(sym);
                                     sym->asm_location = 8 + int_stack_index*4;
                                     int_stack_index++;
+                                    printf("----------------------%s %d-------------------------\n", sym->name, sym->asm_location);
                                     $$ = makeNode(astParam, sym, $1, NULL, NULL, NULL);
                                   }
 

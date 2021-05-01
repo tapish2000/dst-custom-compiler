@@ -835,13 +835,10 @@ void processAssignment(struct Ast_node *p, int level)
 void processExpr(struct Ast_node *p, int level)
 {
 	generateCode(p->child_node[0], level + 1); // Expression
-	ShowVStack();
 	struct Symbol *lhs = popV();
 	generateCode(p->child_node[1], level + 1); // Operator
-	ShowVStack();
 	struct Symbol *op = popV();
 	generateCode(p->child_node[2], level + 1); // Value
-	ShowVStack();
 	struct Symbol *val = popV();
 	struct Symbol * data;
 	if(val->tag=='a'){
@@ -934,10 +931,10 @@ void processExpr(struct Ast_node *p, int level)
 				r = freeregister();
 				if (val->tag == 'a')
 				{
-					// struct Symbol *data = popV();
 					fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
 					fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
 					fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, val->asm_location, data->reg);
+					fprintf(asmCode, "    add $%d, $%d, $%d\n", lhs->reg, lhs->reg, data->reg);
 				}
 				else
 				{
@@ -1058,8 +1055,10 @@ void processExpr(struct Ast_node *p, int level)
 			case 'm':
 				if (val->tag == 'a')
 				{
-					struct Symbol *data = popV();
-					fprintf(asmCode, "	lw $%d %d($fp)\n", r, val->asm_location + 4 * (data->value.ivalue));
+					fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
+					fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
+					fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, val->asm_location, data->reg);
+					fprintf(asmCode, "    add $%d, $%d, $%d\n", lhs->reg, lhs->reg, data->reg);
 				}
 				else
 				{
@@ -1175,8 +1174,10 @@ void processExpr(struct Ast_node *p, int level)
 				r = freeregister();
 				if (val->tag == 'a')
 				{
-					struct Symbol *data = popV();
-					fprintf(asmCode, "	lw $%d %d($fp)\n", r, val->asm_location + 4 * (data->value.ivalue));
+					fprintf(asmCode, "    sll  $%d, $%d, 2\n", data->reg, data->reg);
+					fprintf(asmCode, "    add  $%d, $%d, $fp\n", data->reg, data->reg);
+					fprintf(asmCode, "    lw  $%d, %d($%d)\n", data->reg, val->asm_location, data->reg);
+					fprintf(asmCode, "    add $%d, $%d, $%d\n", lhs->reg, lhs->reg, data->reg);
 				}
 				else
 				{
