@@ -31,7 +31,7 @@ loopif2:
     lw $6, 28($fp)
   sub $5, $5, $6
     subu $5, $5, 1
-	slt $4 $4 $0
+	slt $4 $4 $5
     beq $4, $0, endloopif2
     nop
     lw  $6, 32($fp)
@@ -40,42 +40,42 @@ loopif2:
     lw  $6, 8($6)
     lw  $7, 32($fp)
     addu $7, $7, 1
-    sll  $0, $0, 2
-    add  $0, $0, $fp
-    lw  $0, 8($0)
-	slt $6 $0 $6
+    sll  $7, $7, 2
+    add  $7, $7, $fp
+    lw  $7, 8($7)
+	slt $6 $7 $6
 	beq $6 $0 endif1
     lw  $8, 32($fp)
     addu $8, $8, 1
-    sll  $0, $0, 2
-    add  $0, $0, $fp
-    lw  $0, 8($0)
-    sw $0, 36($fp)
+    sll  $8, $8, 2
+    add  $8, $8, $fp
+    lw  $8, 8($8)
+    sw $8, 36($fp)
+    lw  $8, 32($fp)
+    addu $8, $8, 1
     lw  $9, 32($fp)
-    addu $9, $9, 1
-    lw  $10, 32($fp)
-    sll  $10, $10, 2
-    add  $10, $10, $fp
-    lw  $10, 8($10)
-    sll  $0, $0, 2
-    add  $0, $0, $fp
-    sw $10, 8($0)
-    lw  $10, 32($fp)
-    lw  $11, 36($fp)
-    sll  $10, $10, 2
-    add  $10, $10, $fp
-    sw $11, 8($10)
+    sll  $9, $9, 2
+    add  $9, $9, $fp
+    lw  $9, 8($9)
+    sll  $8, $8, 2
+    add  $8, $8, $fp
+    sw $9, 8($8)
+    lw  $8, 32($fp)
+    lw  $9, 36($fp)
+    sll  $8, $8, 2
+    add  $8, $8, $fp
+    sw $9, 8($8)
 	b endelse1
 endif1:
 endelse1:
-    lw  $10, 32($fp)
-    addu $10, $10, 1
-    sw  $0, 32($fp)
-endloop2:
-    lw  $11, 28($fp)
-    addu $11, $11, 1
-    sw  $0, 28($fp)
-endloop1:
+    lw  $8, 32($fp)
+    addu $8, $8, 1
+    sw  $8, 32($fp)
+endloopif2:
+    lw  $8, 28($fp)
+    addu $8, $8, 1
+    sw  $8, 28($fp)
+endloopif1:
     move $2,$0
     move $sp,$fp
     lw $fp,36($sp)

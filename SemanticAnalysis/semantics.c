@@ -196,7 +196,7 @@ void processLoop(struct Ast_node *p, int level) {
 
 	generateCode(p->child_node[1], level + 1);	// Statement List
 
-	fprintf(asmCode, "endloop%d:\n", temp_num_loops);
+	fprintf(asmCode, "endloopif%d:\n", temp_num_loops);
 } 
 
 void processConditional(struct Ast_node *p, int level) {
@@ -269,6 +269,7 @@ void processBoolean(struct Ast_node *p, int level) {
 	op = popV();
 	generateCode(p->child_node[2], level + 1);	// Expression
 	right = popV();
+	printf("***************************Debug:  %s  %d\n",right->name,right->reg);
 	struct Symbol *sym = (struct Symbol *)malloc(sizeof(struct Symbol));
 	int l,r;
 	if(strcmp(op->asm_name,"astLt") == 0){
@@ -305,6 +306,7 @@ void processBoolean(struct Ast_node *p, int level) {
 						break;
 					case 'r':
 						r = right->reg;
+						printf("-----------------------------------------------------------------------------------------------------Check value of R: %d\n",r);
 						break;
 					case 'c':
 						r = freeregister();
@@ -925,7 +927,7 @@ void processExpr(struct Ast_node *p, int level) {
 					break;
 					case 'r':
 					// No idea if this case is possible.
-						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+						printf("IMPOSSIBLE ('m'-'r')\n");
 					break;
 					case 's':
 						printf("IMPOSSIBLE ('m'-'s')\n");
@@ -953,8 +955,7 @@ void processExpr(struct Ast_node *p, int level) {
 					break;
 					case 'r':
 					// No idea if this case is possible
-						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
-						fprintf(asmCode, "    add  eax, [REG_INT]\n");
+						printf("IMPOSSIBLE ('c'-'r')\n");
 					break;
 					case 's':
 						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
@@ -978,9 +979,10 @@ void processExpr(struct Ast_node *p, int level) {
 					case 'c':
 						fprintf(asmCode, "    addu $%d, $%d, %d\n",lhs->reg,lhs->reg,val->value.ivalue);
 						sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
+						sym->reg = lhs->reg;
 					break;
 					case 'r':
-						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
+						printf("IMPOSSIBLE ('r'-'r')\n");
 					break;
 					case 's':
 						printf("IMPOSSIBLE (CONSTANT-STACK)\n");
@@ -1073,9 +1075,9 @@ void processExpr(struct Ast_node *p, int level) {
 				}
 			break;
 			case 'r':
+				r = freeregister();
 				switch (val->asmclass){
 					case 'm':
-						r = freeregister();
 						if(val->tag == 'a') {
 							struct Symbol* data = popV();
 							fprintf(asmCode,"	lw $%d %d($fp)\n",r,val->asm_location + 4*(data->value.ivalue));
@@ -1090,7 +1092,6 @@ void processExpr(struct Ast_node *p, int level) {
 						sym->reg = val->reg;
 					break;
 					case 'c':
-						r = freeregister();
 						fprintf(asmCode, "    li $%d, %d\n",r, val->value.ivalue);
 						registers[r-2] = 1;
 						fprintf(asmCode, "    mult $%d, $%d\n",lhs->reg,r);
@@ -1197,7 +1198,8 @@ void processExpr(struct Ast_node *p, int level) {
 					break;
 					case 'c':
 						fprintf(asmCode, "    subu $%d, $%d, %d\n",lhs->reg,lhs->reg,val->value.ivalue);
-						sym->value.ivalue = lhs->value.ivalue + val->value.ivalue;
+						sym->value.ivalue = lhs->value.ivalue - val->value.ivalue;
+						sym->reg = lhs->reg;
 					break;
 					case 'r':
 						fprintf(asmCode, "    mov  eax, %d\n", lhs->value.ivalue);
