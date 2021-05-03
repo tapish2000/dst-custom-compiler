@@ -63,7 +63,7 @@
 #define astArrayAssignStmt 554
 #define astElifStmt 555
 #define astNotConditions 556
-
+#define astValue 557
 
 union Value{
   int ivalue;

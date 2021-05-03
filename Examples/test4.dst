@@ -1,0 +1,10 @@
+start {
+  integer n is 5;
+  integer i is 1;
+  integer sum is 0;
+  loopif (i <= n) {
+    sum is sum + i;
+    i is i + 1;
+  }
+  show(sum);
+}

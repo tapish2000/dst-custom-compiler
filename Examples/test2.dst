@@ -1,8 +1,19 @@
-start {
-  integer a is 10;
-  if(a < 7){
-    integer b is a + 2;
-  }else{
-    integer c is a + 2;
-  }
+start{
+    integer a is 6;
+    integer b is 4;
+    integer c is 5;
+    if(a>b){
+        if(a>c){
+            show(a);
+        }
+        else{
+            show(c);
+        }
+    }else{
+        if(b>c){
+            show(b);
+        }else{
+            show(c);
+        }
+    }
 }
