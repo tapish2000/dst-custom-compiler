@@ -1,6 +1,6 @@
 # dst-custom-compiler
 
-The dst-custom-compiler is a Yacc repository.
+The dst-custom-compiler is a repository containing the compiler for a language named **dst**.
 
 
 ## Description
@@ -64,9 +64,10 @@ make
 
 The following are the collaborators of the project:
 
+- [Darahas Kopparapu](https://github.com/darahask)
 - [Shubhankar Bhadra](https://github.com/shobhi1310)
-
 - [Tapish Ojha](https://github.com/tapish2000)
+- [Vaishnavi](https://github.com/cs18b028)
 
 
 ## Contributing
